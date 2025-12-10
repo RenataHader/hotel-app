@@ -1,0 +1,76 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  main:
+    web-application-type: reactive
+
+  cloud:
+    gateway:
+
+      # Globalny CORS - dzięki temu frontend (Vite) może wołać gateway bez problemów
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+
+      # Route'y - czyli mapowanie ścieżek na konkretne mikroserwisy
+      routes:
+        - id: booking-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/booking/**
+          filters:
+            # usunie prefix /booking zanim żądanie trafi do serwisu
+            - StripPrefix=1
+
+        - id: catalog-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/catalog/**
+          filters:
+            - StripPrefix=1
+
+        - id: identity-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/identity/**
+          filters:
+            - StripPrefix=1
+
+        - id: operations-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/operations/**
+          filters:
+            - StripPrefix=1
+
+# Opcjonalnie: logi routingu (bardzo pomocne przy debugowaniu)
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    reactor.netty.http.client: INFO
+
+# Opcjonalnie: actuator, żeby mieć health check gatewaya
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: never
