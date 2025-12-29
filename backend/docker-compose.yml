@@ -1,0 +1,54 @@
+services:
+  db-identity:
+    image: postgres:16
+    container_name: db-identity
+    environment:
+      POSTGRES_DB: identity_db
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5433:5432"
+    volumes:
+      - identity_data:/var/lib/postgresql/data
+
+  db-catalog:
+    image: postgres:16
+    container_name: db-catalog
+    environment:
+      POSTGRES_DB: catalog_db
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5434:5432"
+    volumes:
+      - catalog_data:/var/lib/postgresql/data
+
+  db-booking:
+    image: postgres:16
+    container_name: db-booking
+    environment:
+      POSTGRES_DB: booking_db
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5435:5432"
+    volumes:
+      - booking_data:/var/lib/postgresql/data
+
+  db-operations:
+    image: postgres:16
+    container_name: db-operations
+    environment:
+      POSTGRES_DB: operations_db
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5436:5432"
+    volumes:
+      - operations_data:/var/lib/postgresql/data
+
+volumes:
+  identity_data:
+  catalog_data:
+  booking_data:
+  operations_data:
