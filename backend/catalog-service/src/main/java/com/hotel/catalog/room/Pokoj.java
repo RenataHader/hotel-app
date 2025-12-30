@@ -6,6 +6,7 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
+@Table(name = "pokoj")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
@@ -13,7 +14,7 @@ public class Pokoj {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_pokoju")
-    private Long id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "id_hotelu", nullable = false)

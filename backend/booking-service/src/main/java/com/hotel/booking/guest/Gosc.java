@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
+@Table(name = "gosc")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
@@ -11,7 +12,7 @@ public class Gosc {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_goscia")
-    private Long id;
+    private Integer id;
 
     @Column(name = "imie", nullable = false)
     private String firstName;
