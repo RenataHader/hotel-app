@@ -11,7 +11,6 @@ spring:
   cloud:
     gateway:
 
-      # Globalny CORS - dzięki temu frontend (Vite) może wołać gateway bez problemów
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -59,13 +58,11 @@ spring:
           filters:
             - StripPrefix=1
 
-# Opcjonalnie: logi routingu (bardzo pomocne przy debugowaniu)
 logging:
   level:
     org.springframework.cloud.gateway: INFO
     reactor.netty.http.client: INFO
 
-# Opcjonalnie: actuator, żeby mieć health check gatewaya
 management:
   endpoints:
     web:

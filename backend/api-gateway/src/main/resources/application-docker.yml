@@ -1,0 +1,31 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: booking-service
+          uri: http://booking-service:8081
+          predicates:
+            - Path=/booking/**
+          filters:
+            - StripPrefix=1
+
+        - id: catalog-service
+          uri: http://catalog-service:8082
+          predicates:
+            - Path=/catalog/**
+          filters:
+            - StripPrefix=1
+
+        - id: identity-service
+          uri: http://identity-service:8083
+          predicates:
+            - Path=/identity/**
+          filters:
+            - StripPrefix=1
+
+        - id: operations-service
+          uri: http://operations-service:8084
+          predicates:
+            - Path=/operations/**
+          filters:
+            - StripPrefix=1
