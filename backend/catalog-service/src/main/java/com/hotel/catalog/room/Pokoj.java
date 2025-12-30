@@ -1,5 +1,6 @@
-package com.hotel.catalog.hotel;
+package com.hotel.catalog.room;
 
+import com.hotel.catalog.hotel.Hotel;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;

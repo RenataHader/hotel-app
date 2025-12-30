@@ -1,4 +1,4 @@
-package com.hotel.catalog.hotel;
+package com.hotel.catalog.room;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

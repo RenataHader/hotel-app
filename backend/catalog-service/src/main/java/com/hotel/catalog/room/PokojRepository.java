@@ -1,4 +1,4 @@
-package com.hotel.catalog.hotel;
+package com.hotel.catalog.room;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

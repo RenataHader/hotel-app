@@ -1,4 +1,4 @@
-package com.hotel.booking.hotel;
+package com.hotel.booking.reservation;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

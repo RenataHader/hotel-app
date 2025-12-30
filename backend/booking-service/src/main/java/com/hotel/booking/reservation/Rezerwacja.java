@@ -1,5 +1,6 @@
-package com.hotel.booking.hotel;
+package com.hotel.booking.reservation;
 
+import com.hotel.booking.guest.Gosc;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;

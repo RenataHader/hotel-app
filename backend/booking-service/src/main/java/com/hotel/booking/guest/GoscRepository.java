@@ -1,4 +1,4 @@
-package com.hotel.booking.hotel;
+package com.hotel.booking.guest;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
