@@ -2,20 +2,21 @@ package com.hotel.catalog.hotel;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 
 @Entity
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
-public class Hotel {
+public class Wyzywienie {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_hotelu")
+    @Column(name = "id_wyzywienia")
     private Long id;
 
-    @Column(name = "nazwa", nullable = false)
-    private String name;
+    @Column(name = "typ", nullable = false)
+    private String type;
 
-    @Column(name = "adres", nullable = false)
-    private String address;
+    @Column(name = "cena", nullable = false)
+    private BigDecimal price;
 }
