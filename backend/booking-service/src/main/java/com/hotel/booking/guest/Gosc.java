@@ -23,6 +23,6 @@ public class Gosc {
     @Column(name = "nr_telefonu")
     private String phoneNumber;
 
-    @Column(name = "nr_dokumentu")
+    @Column(name = "nr_dokumentu", nullable = false)
     private String documentNumber;
 }

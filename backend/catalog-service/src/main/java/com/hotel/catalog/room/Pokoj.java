@@ -26,7 +26,7 @@ public class Pokoj {
     @Column(name = "typ", nullable = false)
     private String type;
 
-    @Column(name = "liczba_lozek")
+    @Column(name = "liczba_lozek", nullable = false)
     private Integer numberOfBeds;
 
     @Column(name = "cena", nullable = false)

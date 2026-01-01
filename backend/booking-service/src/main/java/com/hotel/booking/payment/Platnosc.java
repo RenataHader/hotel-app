@@ -24,10 +24,10 @@ public class Platnosc {
     @Column(name = "kwota", nullable = false)
     private BigDecimal amount;
 
-    @Column(name = "data_platnosci")
+    @Column(name = "data_platnosci", nullable = false)
     private LocalDateTime paymentDate;
 
-    @Column(name = "metoda_platnosci")
+    @Column(name = "metoda_platnosci", nullable = false)
     private String paymentMethod;
 
     @Column(nullable = false)
