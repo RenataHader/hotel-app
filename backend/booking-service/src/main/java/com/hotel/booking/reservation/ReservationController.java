@@ -5,19 +5,19 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/reservations")
+@RequestMapping("/api/reservations")
 @RequiredArgsConstructor
 public class ReservationController {
-    private final ReservationRepository repo;
+
+    private final ReservationService reservationService;
 
     @GetMapping
-    public List<Reservation> getAll() {
-        return repo.findAll();
+    public List<ReservationResponse> getAll() {
+        return reservationService.getAllReservations();
     }
 
     @PostMapping
-    public Reservation create(@RequestBody Reservation reservation) {
-        reservation.setId(null);
-        return repo.save(reservation);
+    public ReservationResponse create(@RequestBody ReservationRequest request) {
+        return reservationService.createReservation(request);
     }
 }
