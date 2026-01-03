@@ -7,17 +7,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/reservations")
 @RequiredArgsConstructor
-public class RezerwacjaController {
-    private final RezerwacjaRepository repo;
+public class ReservationController {
+    private final ReservationRepository repo;
 
     @GetMapping
-    public List<Rezerwacja> getAll() {
+    public List<Reservation> getAll() {
         return repo.findAll();
     }
 
     @PostMapping
-    public Rezerwacja create(@RequestBody Rezerwacja rezerwacja) {
-        rezerwacja.setId(null);
-        return repo.save(rezerwacja);
+    public Reservation create(@RequestBody Reservation reservation) {
+        reservation.setId(null);
+        return repo.save(reservation);
     }
 }

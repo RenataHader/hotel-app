@@ -7,17 +7,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/payments")
 @RequiredArgsConstructor
-public class PlatnoscController {
-    private final PlatnoscRepository repo;
+public class PaymentController {
+    private final PaymentRepository repo;
 
     @GetMapping
-    public List<Platnosc> getAll() {
+    public List<Payment> getAll() {
         return repo.findAll();
     }
 
     @PostMapping
-    public Platnosc create(@RequestBody Platnosc platnosc) {
-        platnosc.setId(null);
-        return repo.save(platnosc);
+    public Payment create(@RequestBody Payment payment) {
+        payment.setId(null);
+        return repo.save(payment);
     }
 }

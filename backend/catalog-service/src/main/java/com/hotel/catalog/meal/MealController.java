@@ -7,17 +7,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/catering")
 @RequiredArgsConstructor
-public class WyzywienieController {
-    private final WyzywienieRepository repo;
+public class MealController {
+    private final MealRepository repo;
 
     @GetMapping
-    public List<Wyzywienie> getAll() {
+    public List<Meal> getAll() {
         return repo.findAll();
     }
 
     @PostMapping
-    public Wyzywienie create(@RequestBody Wyzywienie wyzywienie) {
-        wyzywienie.setId(null);
-        return repo.save(wyzywienie);
+    public Meal create(@RequestBody Meal meal) {
+        meal.setId(null);
+        return repo.save(meal);
     }
 }

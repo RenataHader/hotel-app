@@ -7,17 +7,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/guests")
 @RequiredArgsConstructor
-public class GoscController {
-    private final GoscRepository repo;
+public class GuestController {
+    private final GuestRepository repo;
 
     @GetMapping
-    public List<Gosc> getAll() {
+    public List<Guest> getAll() {
         return repo.findAll();
     }
 
     @PostMapping
-    public Gosc create(@RequestBody Gosc gosc) {
-        gosc.setId(null);
-        return repo.save(gosc);
+    public Guest create(@RequestBody Guest guest) {
+        guest.setId(null);
+        return repo.save(guest);
     }
 }

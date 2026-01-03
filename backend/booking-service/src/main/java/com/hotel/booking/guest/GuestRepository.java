@@ -2,5 +2,5 @@ package com.hotel.booking.guest;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface GoscRepository extends JpaRepository<Gosc, Integer> {
+public interface GuestRepository extends JpaRepository<Guest, Integer> {
 }

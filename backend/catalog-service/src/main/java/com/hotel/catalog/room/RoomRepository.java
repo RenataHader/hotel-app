@@ -2,5 +2,5 @@ package com.hotel.catalog.room;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface PokojRepository extends JpaRepository<Pokoj, Integer> {
+public interface RoomRepository extends JpaRepository<Room, Integer> {
 }

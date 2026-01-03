@@ -7,17 +7,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/rooms")
 @RequiredArgsConstructor
-public class PokojController {
-    private final PokojRepository repo;
+public class RoomController {
+    private final RoomRepository repo;
 
     @GetMapping
-    public List<Pokoj> getAll() {
+    public List<Room> getAll() {
         return repo.findAll();
     }
 
     @PostMapping
-    public Pokoj create(@RequestBody Pokoj pokoj) {
-        pokoj.setId(null);
-        return repo.save(pokoj);
+    public Room create(@RequestBody Room room) {
+        room.setId(null);
+        return repo.save(room);
     }
 }

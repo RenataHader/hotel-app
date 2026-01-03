@@ -1,6 +1,6 @@
 package com.hotel.booking.payment;
 
-import com.hotel.booking.reservation.Rezerwacja;
+import com.hotel.booking.reservation.Reservation;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
-public class Platnosc {
+public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_platnosci")
@@ -19,7 +19,7 @@ public class Platnosc {
 
     @OneToOne
     @JoinColumn(name = "nr_rezerwacji", nullable = false)
-    private Rezerwacja rezerwacja;
+    private Reservation reservation;
 
     @Column(name = "kwota", nullable = false)
     private BigDecimal amount;

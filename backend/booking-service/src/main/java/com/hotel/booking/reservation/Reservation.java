@@ -1,6 +1,6 @@
 package com.hotel.booking.reservation;
 
-import com.hotel.booking.guest.Gosc;
+import com.hotel.booking.guest.Guest;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -10,7 +10,7 @@ import java.time.LocalDate;
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
-public class Rezerwacja {
+public class Reservation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "nr_rezerwacji")
@@ -18,7 +18,7 @@ public class Rezerwacja {
 
     @ManyToOne
     @JoinColumn(name = "id_goscia", nullable = false)
-    private Gosc gosc;
+    private Guest guest;
 
     @Column(name = "id_hotelu", nullable = false)
     private Integer hotelId;
