@@ -27,6 +27,7 @@
         <module>operations-service</module>
         <module>identity-service</module>
         <module>api-gateway</module>
+        <module>security-common</module>
     </modules>
     <scm>
 		<connection/>

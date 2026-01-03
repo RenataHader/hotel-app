@@ -64,6 +64,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: app
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
+      APP_JWT_EXPIRATION_MS: "3600000"
+      APP_SECURITY_PERMIT_ALL: "/actuator/**,/public/**"
     depends_on:
       - db-booking
 
@@ -82,6 +85,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: app
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
+      APP_JWT_EXPIRATION_MS: "3600000"
+      APP_SECURITY_PERMIT_ALL: "/actuator/**,/rooms/**,/offers/**"
     depends_on:
       - db-catalog
 
@@ -100,6 +106,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: app
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
+      APP_JWT_EXPIRATION_MS: "3600000"
+      APP_SECURITY_PERMIT_ALL: "/auth/**,/actuator/**"
     depends_on:
       - db-identity
 
@@ -118,6 +127,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: app
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
+      APP_JWT_EXPIRATION_MS: "3600000"
+      APP_SECURITY_PERMIT_ALL: "/actuator/**"
     depends_on:
       - db-operations
 

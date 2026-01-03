@@ -23,5 +23,9 @@ public class Account {
     @Column(name = "rola", nullable = false)
     private String role;
 
+    @Column(name = "id_pracownika")
+    private Integer employeeId;
 
+    @Column(name = "id_goscia")
+    private Integer guestId;
 }
