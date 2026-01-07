@@ -1,25 +1,21 @@
-import { useEffect, useState } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
+import LoginPage from "./pages/LoginPage";
+import RegisterGuestPage from "./pages/RegisterGuestPage";
+import GuestHome from "./pages/GuestHome";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-function App() {
-  const [message, setMessage] = useState("Łączenie z backendem...");
-
-  useEffect(() => {
-    fetch("http://localhost:8080/api/test")
-      .then((res) => res.text())
-      .then((data) => setMessage(data))
-      .catch((err) => {
-        console.error(err);
-        setMessage("Błąd połączenia z backendem");
-      });
-  }, []);
-
+export default function App() {
   return (
-    <div style={{ fontFamily: "sans-serif", padding: "2rem" }}>
-      <h1>Hotel App</h1>
-      <p>Odpowiedź z backendu:</p>
-      <strong>{message}</strong>
-    </div>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterGuestPage />} />
+
+      <Route element={<ProtectedRoute />}>
+        <Route path="/guest" element={<GuestHome />} />
+        <Route path="/" element={<Navigate to="/guest" replace />} />
+      </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
-
-export default App;
