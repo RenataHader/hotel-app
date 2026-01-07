@@ -1,0 +1,4 @@
+ALTER TABLE rezerwacja
+ADD COLUMN hotel_name VARCHAR(100),
+ADD COLUMN room_number VARCHAR(10),
+ADD COLUMN price DECIMAL(10, 2);
