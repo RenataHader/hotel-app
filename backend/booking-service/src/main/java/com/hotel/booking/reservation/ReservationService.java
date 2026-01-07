@@ -51,6 +51,14 @@ public class ReservationService {
     }
 
     @Transactional
+    public void updateStatus(Integer id, String newStatus) {
+        Reservation reservation = reservationRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+        reservation.setStatus(newStatus);
+        reservationRepo.save(reservation);
+    }
+
+    @Transactional
     public ReservationResponse createReservation(ReservationRequest request) {
         Guest guest = getAuthenticatedGuest();
 

@@ -44,6 +44,11 @@ public class ReservationController {
         reservationService.cancelReservation(id);
     }
 
+    @PatchMapping("/{id}/status")
+    public void updateStatus(@PathVariable Integer id, @RequestParam String value) {
+        reservationService.updateStatus(id, value);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ReservationResponse create(@Valid @RequestBody ReservationRequest request) {
