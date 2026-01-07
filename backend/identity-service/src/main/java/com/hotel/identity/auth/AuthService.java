@@ -6,6 +6,8 @@ import com.hotel.security.JwtService;
 import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.util.HashMap;
+import java.util.Map;
 
 import java.util.Map;
 
@@ -27,42 +29,6 @@ public class AuthService {
         this.bookingClient = bookingClient;
     }
 
-    @Transactional
-    public AuthResponse register(RegisterRequest req) {
-        validateXor(req.employeeId(), req.guestId());
-
-        if (repo.existsByEmail(req.email())) {
-            throw new IllegalArgumentException("Email already exists");
-        }
-
-        Account acc = Account.builder()
-                .email(req.email())
-                .password(encoder.encode(req.password()))
-                .role(req.role())
-                .employeeId(req.employeeId())
-                .guestId(req.guestId())
-                .build();
-
-        acc = repo.save(acc);
-
-        String token = jwtService.generateToken(
-                acc.getEmail(),
-                Map.of(
-                        "role", acc.getRole(),
-                        "accountId", acc.getId()
-                )
-        );
-
-        return new AuthResponse(
-                token,
-                "Bearer",
-                jwtService.expiresInSeconds(),
-                acc.getId(),
-                acc.getEmail(),
-                acc.getRole()
-        );
-    }
-
     public AuthResponse login(LoginRequest req) {
         Account acc = repo.findByEmail(req.email())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
@@ -71,13 +37,22 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid email or password");
         }
 
-        String token = jwtService.generateToken(
-                acc.getEmail(),
-                Map.of(
-                        "role", acc.getRole(),
-                        "accountId", acc.getId()
-                )
-        );
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", acc.getRole());
+        claims.put("accountId", acc.getId());
+
+        // jeśli to pracownik – dociągnij hotelId
+        if (acc.getEmployeeId() != null) {
+            Integer hotelId = operationsClient.getHotelIdForEmployee(acc.getEmployeeId());
+            claims.put("hotelId", hotelId);
+        }
+
+        // jeśli to gość – dodaj guestId (masz go w tabeli accounts)
+        if (acc.getGuestId() != null) {
+            claims.put("guestId", acc.getGuestId());
+        }
+
+        String token = jwtService.generateToken(acc.getEmail(), claims);
 
         return new AuthResponse(
                 token,
@@ -128,9 +103,10 @@ public class AuthService {
 
         acc = repo.save(acc);
 
-        String token = jwtService.generateToken(acc.getEmail(), java.util.Map.of(
+        String token = jwtService.generateToken(acc.getEmail(), Map.of(
                 "role", acc.getRole(),
-                "accountId", acc.getId()
+                "accountId", acc.getId(),
+                "guestId", guestId
         ));
 
         return new AuthResponse(token, "Bearer", jwtService.expiresInSeconds(), acc.getId(), acc.getEmail(), acc.getRole());
