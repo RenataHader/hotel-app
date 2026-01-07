@@ -43,8 +43,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String role = (String) claims.get("role");
             if (role != null && !role.startsWith("ROLE_")) role = "ROLE_" + role;
 
+            Integer accountId = toInt(claims.get("accountId"));
+            Integer hotelId = toInt(claims.get("hotelId"));
+
+            JwtUser principal = new JwtUser(email, accountId, role, hotelId);
+
             var auth = new UsernamePasswordAuthenticationToken(
-                    email,
+                    principal,
                     null,
                     role == null ? List.of() : List.of(new SimpleGrantedAuthority(role))
             );
@@ -53,5 +58,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(req, res);
+    }
+
+    private Integer toInt(Object v) {
+        if (v == null) return null;
+        if (v instanceof Number n) return n.intValue();
+        return Integer.valueOf(v.toString());
     }
 }

@@ -15,11 +15,16 @@ public class AuthService {
     private final AccountRepository repo;
     private final PasswordEncoder encoder;
     private final JwtService jwtService;
+    private final OperationsClient operationsClient;
+    private final BookingClient bookingClient;
 
-    public AuthService(AccountRepository repo, PasswordEncoder encoder, JwtService jwtService) {
+    public AuthService(AccountRepository repo, PasswordEncoder encoder, JwtService jwtService,
+                       OperationsClient operationsClient, BookingClient bookingClient) {
         this.repo = repo;
         this.encoder = encoder;
         this.jwtService = jwtService;
+        this.operationsClient = operationsClient;
+        this.bookingClient = bookingClient;
     }
 
     @Transactional
@@ -97,4 +102,68 @@ public class AuthService {
         if (id == null) throw new IllegalStateException("Account ID is null (did you save the entity before token?)");
         return id;
     }
+
+    @Transactional
+    public AuthResponse registerGuest(RegisterGuestRequest req) {
+        if (repo.existsByEmail(req.email())) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
+        Integer guestId = bookingClient.createGuest(
+                new BookingClient.CreateGuestRequest(
+                        req.firstName(),
+                        req.lastName(),
+                        req.phoneNumber(),
+                        req.documentNumber()
+                )
+        );
+
+        Account acc = Account.builder()
+                .email(req.email())
+                .password(encoder.encode(req.password()))
+                .role("GUEST")
+                .guestId(guestId)
+                .employeeId(null)
+                .build();
+
+        acc = repo.save(acc);
+
+        String token = jwtService.generateToken(acc.getEmail(), java.util.Map.of(
+                "role", acc.getRole(),
+                "accountId", acc.getId()
+        ));
+
+        return new AuthResponse(token, "Bearer", jwtService.expiresInSeconds(), acc.getId(), acc.getEmail(), acc.getRole());
+    }
+
+    @Transactional
+    public AuthResponse registerEmployee(RegisterEmployeeRequest req) {
+        if (repo.existsByEmail(req.email())) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
+        // tu docelowo: walidacja employeeId (czy istnieje) przez operations-service
+        Account acc = Account.builder()
+                .email(req.email())
+                .password(encoder.encode(req.password()))
+                .role(req.role())
+                .employeeId(req.employeeId())
+                .guestId(null)
+                .build();
+
+        acc = repo.save(acc);
+
+        // hotelId najlepiej dociągnąć z operations-service po employeeId
+        Integer hotelId = operationsClient.getHotelIdForEmployee(acc.getEmployeeId());
+
+        String token = jwtService.generateToken(acc.getEmail(), Map.of(
+                "role", acc.getRole(),
+                "accountId", acc.getId(),
+                "hotelId", hotelId
+        ));
+
+        return new AuthResponse(token, "Bearer", jwtService.expiresInSeconds(), acc.getId(), acc.getEmail(), acc.getRole());
+    }
+
+
 }

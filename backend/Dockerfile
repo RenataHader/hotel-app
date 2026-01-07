@@ -3,7 +3,7 @@ FROM maven:3.9.9-eclipse-temurin-21 AS build
 ARG MODULE
 WORKDIR /workspace
 COPY . .
-RUN mvn -DskipTests -pl ${MODULE} -am package
+RUN mvn -DskipTests -pl ${MODULE} -am clean package
 
 # ---- run ----
 FROM eclipse-temurin:21-jre

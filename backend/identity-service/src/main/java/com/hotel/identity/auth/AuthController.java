@@ -2,6 +2,7 @@ package com.hotel.identity.auth;
 
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,9 +15,15 @@ public class AuthController {
         this.service = service;
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest req) {
-        return ResponseEntity.ok(service.register(req));
+    @PostMapping("/register-guest")
+    public ResponseEntity<AuthResponse> registerGuest(@Valid @RequestBody RegisterGuestRequest req) {
+        return ResponseEntity.ok(service.registerGuest(req));
+    }
+
+    @PostMapping("/register-employee")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public ResponseEntity<AuthResponse> registerEmployee(@Valid @RequestBody RegisterEmployeeRequest req) {
+        return ResponseEntity.ok(service.registerEmployee(req));
     }
 
     @PostMapping("/login")
