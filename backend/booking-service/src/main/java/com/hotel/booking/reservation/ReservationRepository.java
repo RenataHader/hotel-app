@@ -2,4 +2,8 @@ package com.hotel.booking.reservation;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ReservationRepository extends JpaRepository<Reservation, Integer> {}
+import java.time.LocalDate;
+
+public interface ReservationRepository extends JpaRepository<Reservation, Integer> {
+    boolean existsByRoomIdAndCheckInDateBeforeAndCheckOutDateAfter(Integer roomId, LocalDate checkOutDate, LocalDate checkInDate);
+}

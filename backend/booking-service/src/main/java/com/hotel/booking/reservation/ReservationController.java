@@ -1,5 +1,6 @@
 package com.hotel.booking.reservation;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -17,7 +18,7 @@ public class ReservationController {
     }
 
     @PostMapping
-    public ReservationResponse create(@RequestBody ReservationRequest request) {
+    public ReservationResponse create(@Valid @RequestBody ReservationRequest request) {
         return reservationService.createReservation(request);
     }
 }

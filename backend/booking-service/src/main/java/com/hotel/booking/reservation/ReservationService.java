@@ -23,6 +23,13 @@ public class ReservationService {
         var guest = guestRepo.findById(request.getGuestId())
                 .orElseThrow(() -> new RuntimeException("Guest not found"));
 
+        boolean isOccupied = reservationRepo.existsByRoomIdAndCheckInDateBeforeAndCheckOutDateAfter(
+                request.getRoomId(), request.getCheckOutDate(), request.getCheckInDate());
+
+        if (isOccupied) {
+            throw new RuntimeException("Room is already booked for these dates!");
+        }
+
         Reservation reservation = Reservation.builder()
                 .guest(guest)
                 .hotelId(request.getHotelId())
