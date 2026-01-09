@@ -2,6 +2,7 @@ package com.hotel.catalog.meal;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -13,6 +14,12 @@ public class MealController {
     @GetMapping
     public List<Meal> getAll() {
         return repo.findAll();
+    }
+
+    @GetMapping("/by-type")
+    public Meal getByType(@RequestParam String type) {
+        return repo.findByTypeIgnoreCase(type)
+                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono wyżywienia: " + type));
     }
 
     @PostMapping

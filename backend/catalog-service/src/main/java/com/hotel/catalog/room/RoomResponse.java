@@ -14,4 +14,5 @@ public class RoomResponse {
     private Integer numberOfBeds;
     private BigDecimal price;
     private String status;
+    private Integer hotelId;
 }

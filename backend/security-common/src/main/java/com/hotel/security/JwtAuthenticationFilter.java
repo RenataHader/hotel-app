@@ -45,8 +45,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             Integer accountId = toInt(claims.get("accountId"));
             Integer hotelId = toInt(claims.get("hotelId"));
+            Integer guestId   = toInt(claims.get("guestId"));
 
-            JwtUser principal = new JwtUser(email, accountId, role, hotelId);
+            JwtUser principal = new JwtUser(email, accountId, role, hotelId, guestId);
 
             var auth = new UsernamePasswordAuthenticationToken(
                     principal,

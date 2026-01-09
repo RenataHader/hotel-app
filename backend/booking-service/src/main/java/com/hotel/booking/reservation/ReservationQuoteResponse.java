@@ -4,34 +4,27 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 @Data
 @Builder
-public class ReservationResponse {
-    private Integer id;
-    private String guestFullName;
+public class ReservationQuoteResponse {
+    private long nights;
 
     private Integer hotelId;
     private String hotelName;
 
-    private Integer roomId;
-    private String roomNumber;
-
     private List<ReservedRoomResponse> rooms;
-
     private Integer guestCount;
     private Integer totalBeds;
 
-    private LocalDate checkInDate;
-    private LocalDate checkOutDate;
-
-    private BigDecimal price;
-    private String status;
-
     private String mealType;
     private BigDecimal mealPricePerPerson;
-    private List<SelectedServiceResponse> services;
+    private BigDecimal mealTotal;
 
+    private List<SelectedServiceResponse> services;
+    private BigDecimal servicesTotal;
+
+    private BigDecimal roomsTotal;
+    private BigDecimal total;
 }

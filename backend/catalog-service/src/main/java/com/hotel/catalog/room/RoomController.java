@@ -34,4 +34,19 @@ public class RoomController {
     public RoomResponse create(@RequestBody RoomRequest request) {
         return roomService.createRoom(request);
     }
+
+    @GetMapping("/{id}")
+    public RoomResponse getById(@PathVariable Integer id) {
+        return roomService.getRoomById(id);
+    }
+
+    @GetMapping("/search")
+    public List<RoomResponse> search(
+            @RequestParam Integer hotelId,
+            @RequestParam(required = false) String type
+    ) {
+        return roomService.searchRooms(hotelId, type);
+    }
+
+
 }

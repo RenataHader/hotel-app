@@ -5,7 +5,9 @@ import java.util.List;
 
 public interface RoomRepository extends JpaRepository<Room, Integer> {
 
-    List<Room> findAllByHotelIdAndIdNotIn(Integer hotelId, List<Integer> reservedIds);
+    List<Room> findAllByHotel_Id(Integer hotelId);
 
-    List<Room> findAllByHotelId(Integer hotelId);
+    List<Room> findAllByHotel_IdAndIdNotIn(Integer hotelId, List<Integer> reservedIds);
+
+    List<Room> findAllByHotel_IdAndTypeIgnoreCase(Integer hotelId, String type);
 }

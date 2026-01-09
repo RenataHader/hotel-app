@@ -1,32 +1,28 @@
 package com.hotel.booking.reservation;
 
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class ReservationRequest {
 
-    @NotNull(message = "Guest ID is required")
-    private Integer guestId;
+    private Integer roomId;
+    private List<Integer> roomIds;
 
-    @NotNull(message = "Hotel ID is required")
     private Integer hotelId;
 
-    @NotBlank(message = "Hotel name is required")
-    private String hotelName;
+    @NotNull(message = "guestCount jest wymagane")
+    @Min(value = 1, message = "guestCount musi być >= 1")
+    private Integer guestCount;
 
-    @NotNull(message = "Room ID is required")
-    private Integer roomId;
+    @NotBlank(message = "mealType jest wymagane (np. Brak / Śniadanie / All Inclusive)")
+    private String mealType;
 
-    @NotBlank(message = "Room number is required")
-    private String roomNumber;
+    private List<Integer> serviceIds;
 
     @NotNull(message = "Check-in date is required")
     @FutureOrPresent(message = "Check-in date must be today or in the future")
@@ -36,7 +32,5 @@ public class ReservationRequest {
     @Future(message = "Check-out date must be in the future")
     private LocalDate checkOutDate;
 
-    @NotNull(message = "Price is required")
-    @Positive(message = "Price must be positive")
-    private BigDecimal price;
+    private BigDecimal clientPrice;
 }

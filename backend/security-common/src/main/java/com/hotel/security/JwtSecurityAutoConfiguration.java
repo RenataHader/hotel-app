@@ -10,6 +10,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.*;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.Customizer;
+import org.springframework.http.HttpMethod;
 
 @AutoConfiguration
 @EnableMethodSecurity
@@ -38,12 +40,12 @@ public class JwtSecurityAutoConfiguration {
             SecurityPathsProperties paths
     ) throws Exception {
 
-        http.csrf(csrf -> csrf.disable())
+        http.cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
-                    for (String p : paths.getPermitAll()) {
-                        auth.requestMatchers(p).permitAll();
-                    }
+                    auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll(); // preflight
+                    for (String p : paths.getPermitAll()) auth.requestMatchers(p).permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

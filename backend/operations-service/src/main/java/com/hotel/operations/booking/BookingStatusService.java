@@ -1,6 +1,8 @@
 package com.hotel.operations.booking;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -9,15 +11,31 @@ import org.springframework.web.client.RestTemplate;
 public class BookingStatusService {
 
     private final RestTemplate restTemplate;
-    private final String BOOKING_SERVICE_URL = "http://localhost:8081/api/reservations";
 
-    public void checkIn(Integer reservationId) {
-        String url = BOOKING_SERVICE_URL + "/" + reservationId + "/status?value=CHECKED_IN";
-        restTemplate.patchForObject(url, null, Void.class);
+    @Value("${app.services.booking.base-url:http://localhost:8081}")
+    private String bookingBaseUrl;
+
+    public void checkIn(Integer reservationId, String authHeader) {
+        String url = bookingBaseUrl + "/api/reservations/" + reservationId + "/status?value=CHECKED_IN";
+
+        HttpHeaders headers = new HttpHeaders();
+        if (authHeader != null && !authHeader.isBlank()) {
+            headers.set(HttpHeaders.AUTHORIZATION, authHeader);
+        }
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        restTemplate.exchange(url, HttpMethod.PATCH, entity, Void.class);
     }
 
-    public void checkOut(Integer reservationId) {
-        String url = BOOKING_SERVICE_URL + "/" + reservationId + "/status?value=CHECKED_OUT";
-        restTemplate.patchForObject(url, null, Void.class);
+    public void checkOut(Integer reservationId, String authHeader) {
+        String url = bookingBaseUrl + "/api/reservations/" + reservationId + "/status?value=CHECKED_OUT";
+
+        HttpHeaders headers = new HttpHeaders();
+        if (authHeader != null && !authHeader.isBlank()) {
+            headers.set(HttpHeaders.AUTHORIZATION, authHeader);
+        }
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        restTemplate.exchange(url, HttpMethod.PATCH, entity, Void.class);
     }
 }
