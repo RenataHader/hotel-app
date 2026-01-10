@@ -1,6 +1,3 @@
--- V1__init_booking.sql
--- Schema dla booking-service (goście, rezerwacje, płatności, powiązania pokoi, wyżywienie i usługi)
-
 CREATE TABLE IF NOT EXISTS gosc (
     id_goscia SERIAL PRIMARY KEY,
     imie VARCHAR(50) NOT NULL,
@@ -19,7 +16,6 @@ CREATE TABLE IF NOT EXISTS rezerwacja (
     room_type VARCHAR(50) NOT NULL,
     guest_count INTEGER,
 
-    -- "główny" pokój (dla kompatybilności 1-pokojowej)
     id_pokoju INTEGER NOT NULL,
     room_number VARCHAR(10),
 
@@ -29,7 +25,6 @@ CREATE TABLE IF NOT EXISTS rezerwacja (
     price DECIMAL(10, 2) NOT NULL,
     status VARCHAR(20) NOT NULL,
 
-    -- wyżywienie (snapshot w rezerwacji)
     meal_type VARCHAR(50) NOT NULL DEFAULT 'Brak',
     meal_price_per_person DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
 
@@ -40,15 +35,12 @@ CREATE TABLE IF NOT EXISTS rezerwacja (
 CREATE INDEX IF NOT EXISTS idx_rezerwacja_guest ON rezerwacja(id_goscia);
 CREATE INDEX IF NOT EXISTS idx_rezerwacja_hotel ON rezerwacja(id_hotelu);
 
--- dla rezerwacji 1-pokojowych (pole id_pokoju jako "główny" pokój)
 CREATE INDEX IF NOT EXISTS idx_rezerwacja_room_dates
     ON rezerwacja(id_pokoju, data_zameldowania, data_wymeldowania);
 
--- wspiera filtrowanie po statusie i dacie
 CREATE INDEX IF NOT EXISTS idx_rezerwacja_status_dates
     ON rezerwacja(status, data_zameldowania, data_wymeldowania);
 
--- wiele pokoi w jednej rezerwacji
 CREATE TABLE IF NOT EXISTS rezerwacja_pokoje (
     nr_rezerwacji INTEGER NOT NULL REFERENCES rezerwacja(nr_rezerwacji) ON DELETE CASCADE,
     id_pokoju INTEGER NOT NULL,
@@ -59,7 +51,6 @@ CREATE TABLE IF NOT EXISTS rezerwacja_pokoje (
 
 CREATE INDEX IF NOT EXISTS idx_rezerwacja_pokoje_room ON rezerwacja_pokoje(id_pokoju);
 
--- usługi dodatkowe (opcjonalne) przypięte do rezerwacji
 CREATE TABLE IF NOT EXISTS rezerwacja_uslugi (
     nr_rezerwacji INTEGER NOT NULL REFERENCES rezerwacja(nr_rezerwacji) ON DELETE CASCADE,
     id_uslugi INTEGER NOT NULL,

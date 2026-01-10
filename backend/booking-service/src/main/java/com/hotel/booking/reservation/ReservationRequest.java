@@ -24,12 +24,12 @@ public class ReservationRequest {
 
     private List<Integer> serviceIds;
 
-    @NotNull(message = "Check-in date is required")
-    @FutureOrPresent(message = "Check-in date must be today or in the future")
+    @NotNull(message = "Data zameldowania jest wymagana")
+    @FutureOrPresent(message = "Data zameldowania musi być dzisiejsza lub przyszła")
     private LocalDate checkInDate;
 
-    @NotNull(message = "Check-out date is required")
-    @Future(message = "Check-out date must be in the future")
+    @NotNull(message = "Data wymeldowania jest wymagana")
+    @Future(message = "Data wymeldowania musi być datą przyszłą")
     private LocalDate checkOutDate;
 
     private BigDecimal clientPrice;

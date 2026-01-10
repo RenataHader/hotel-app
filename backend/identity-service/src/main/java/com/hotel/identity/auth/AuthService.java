@@ -41,13 +41,11 @@ public class AuthService {
         claims.put("role", acc.getRole());
         claims.put("accountId", acc.getId());
 
-        // jeśli to pracownik – dociągnij hotelId
         if (acc.getEmployeeId() != null) {
             Integer hotelId = operationsClient.getHotelIdForEmployee(acc.getEmployeeId());
             claims.put("hotelId", hotelId);
         }
 
-        // jeśli to gość – dodaj guestId (masz go w tabeli accounts)
         if (acc.getGuestId() != null) {
             claims.put("guestId", acc.getGuestId());
         }
@@ -72,7 +70,6 @@ public class AuthService {
         }
     }
 
-    // zabezpieczenie, gdyby ktoś kiedyś zmienił flow i token był generowany przed save()
     private Integer accGetIdSafe(Integer id) {
         if (id == null) throw new IllegalStateException("Account ID is null (did you save the entity before token?)");
         return id;
@@ -118,7 +115,6 @@ public class AuthService {
             throw new IllegalArgumentException("Email already exists");
         }
 
-        // tu docelowo: walidacja employeeId (czy istnieje) przez operations-service
         Account acc = Account.builder()
                 .email(req.email())
                 .password(encoder.encode(req.password()))
@@ -129,7 +125,6 @@ public class AuthService {
 
         acc = repo.save(acc);
 
-        // hotelId najlepiej dociągnąć z operations-service po employeeId
         Integer hotelId = operationsClient.getHotelIdForEmployee(acc.getEmployeeId());
 
         String token = jwtService.generateToken(acc.getEmail(), Map.of(

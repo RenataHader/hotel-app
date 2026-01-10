@@ -1,8 +1,3 @@
--- V2__catalog_seed.sql
--- Minimalne dane testowe: 4 hotele, pokoje, wyżywienie, usługi
--- Idempotentne (bez duplikatów)
-
--- 1) HOTELE (4 szt.)
 INSERT INTO hotel (nazwa, adres)
 SELECT 'Dach w chmurach', 'ul. Widokowa 7, 58-540 Karpacz'
 WHERE NOT EXISTS (SELECT 1 FROM hotel WHERE nazwa = 'Dach w chmurach');
@@ -20,8 +15,7 @@ SELECT 'Dach w lesie', 'ul. Leśna 22, 17-230 Białowieża'
 WHERE NOT EXISTS (SELECT 1 FROM hotel WHERE nazwa = 'Dach w lesie');
 
 
--- 2) POKOJE (po kilka dla każdego hotelu)
--- Dach w chmurach
+
 WITH h AS (
     SELECT id_hotelu FROM hotel WHERE nazwa = 'Dach w chmurach' LIMIT 1
 )
@@ -38,7 +32,7 @@ WHERE NOT EXISTS (
     WHERE p.id_hotelu = h.id_hotelu AND p.nr_pokoju = v.nr_pokoju
 );
 
--- Dach nad palma
+
 WITH h AS (
     SELECT id_hotelu FROM hotel WHERE nazwa = 'Dach nad palma' LIMIT 1
 )
@@ -55,7 +49,7 @@ WHERE NOT EXISTS (
     WHERE p.id_hotelu = h.id_hotelu AND p.nr_pokoju = v.nr_pokoju
 );
 
--- Dach przy żaglu
+
 WITH h AS (
     SELECT id_hotelu FROM hotel WHERE nazwa = 'Dach przy żaglu' LIMIT 1
 )
@@ -72,7 +66,7 @@ WHERE NOT EXISTS (
     WHERE p.id_hotelu = h.id_hotelu AND p.nr_pokoju = v.nr_pokoju
 );
 
--- Dach w lesie
+
 WITH h AS (
     SELECT id_hotelu FROM hotel WHERE nazwa = 'Dach w lesie' LIMIT 1
 )
@@ -90,7 +84,6 @@ WHERE NOT EXISTS (
 );
 
 
--- 3) WYŻYWIENIE (w tym Brak)
 INSERT INTO wyzywienie (typ, cena)
 SELECT 'Brak', 0.00
 WHERE NOT EXISTS (SELECT 1 FROM wyzywienie WHERE LOWER(typ) = LOWER('Brak'));
@@ -104,7 +97,6 @@ SELECT 'All Inclusive', 150.00
 WHERE NOT EXISTS (SELECT 1 FROM wyzywienie WHERE LOWER(typ) = LOWER('All Inclusive'));
 
 
--- 4) USŁUGI
 INSERT INTO usluga (nazwa, billing_type, cena)
 SELECT 'Silownia', 'PER_PERSON_PER_DAY', 20.00
 WHERE NOT EXISTS (SELECT 1 FROM usluga WHERE nazwa='Silownia');

@@ -1,12 +1,19 @@
 package com.hotel.identity.auth;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 
 public record RegisterEmployeeRequest(
-        @Email @NotBlank String email,
-        @NotBlank String password,
-        @NotNull Integer employeeId,
-        @NotBlank String role // docelowo enum, ale na razie zostawimy string
+        @NotBlank(message = "Email jest wymagany")
+        @Email(message = "Niepoprawny format adresu email")
+        String email,
+
+        @NotBlank(message = "Hasło jest wymagane")
+        @Size(min = 8, message = "Hasło musi mieć minimum 8 znaków")
+        String password,
+
+        @NotNull(message = "ID pracownika jest wymagane")
+        Integer employeeId,
+
+        @NotBlank(message = "Rola jest wymagana")
+        String role
 ) {}

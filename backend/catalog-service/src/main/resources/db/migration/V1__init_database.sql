@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS pokoj (
     opis TEXT,
     status VARCHAR(20) NOT NULL,
 
-    -- żeby nie było 2 pokoi o tym samym numerze w tym samym hotelu
     CONSTRAINT uq_pokoj_hotel_nr UNIQUE (id_hotelu, nr_pokoju)
 );
 

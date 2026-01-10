@@ -69,7 +69,6 @@ public class ReservationService {
         long nights = ChronoUnit.DAYS.between(request.getCheckInDate(), request.getCheckOutDate());
         if (nights <= 0) throw new IllegalArgumentException("Check-out musi być po check-in");
 
-        // Dobór pokoi (albo po roomIds, albo auto po guestCount)
         Selection selection = selectRoomsForRequest(request);
 
         List<Integer> requestedRoomIds = normalizeRoomIds(request);
@@ -89,7 +88,6 @@ public class ReservationService {
             throw new IllegalArgumentException("guestCount jest wymagane do wyceny (wyżywienie/usługi)");
         }
 
-        // --- MEAL (obowiązkowe) -> PO ID ---
         Integer mealId = request.getMealId();
         if (mealId == null) {
             throw new IllegalArgumentException("mealId jest wymagane");
@@ -100,13 +98,12 @@ public class ReservationService {
             throw new IllegalArgumentException("Nieprawidłowe mealId: " + mealId);
         }
 
-        String mealType = meal.type(); // tylko do response / snapshotu
+        String mealType = meal.type();
         BigDecimal mealPricePerPerson = money(meal.price());
         BigDecimal mealTotal = mealPricePerPerson
                 .multiply(BigDecimal.valueOf(request.getGuestCount()))
                 .multiply(BigDecimal.valueOf(nights));
 
-        // --- SERVICES (opcjonalne) ---
         List<Integer> serviceIds = request.getServiceIds() == null ? List.of() : request.getServiceIds();
         BigDecimal servicesTotal = BigDecimal.ZERO;
         List<SelectedServiceResponse> servicesOut = new ArrayList<>();
@@ -210,11 +207,9 @@ public class ReservationService {
 
         reservation.setPrice(serverTotal);
 
-        // meal snapshot (z quote, bo już policzone)
         reservation.setMealType(quote.getMealType());
         reservation.setMealPricePerPerson(quote.getMealPricePerPerson());
 
-        // service ids snapshot
         List<Integer> reqServiceIds = request.getServiceIds() == null ? List.of() : request.getServiceIds();
         reservation.setServiceIds(new ArrayList<>(reqServiceIds.stream().filter(Objects::nonNull).toList()));
 
