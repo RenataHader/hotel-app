@@ -8,7 +8,7 @@ SELECT 'Dach w chmurach', 'ul. Widokowa 7, 58-540 Karpacz'
 WHERE NOT EXISTS (SELECT 1 FROM hotel WHERE nazwa = 'Dach w chmurach');
 
 INSERT INTO hotel (nazwa, adres)
-SELECT 'Dach nad palma', 'ul. Palmiarnia 3, 60-809 Poznań'
+SELECT 'Dach nad palma', 'ul. Palmiarnia 3, 60-809 Poznan'
 WHERE NOT EXISTS (SELECT 1 FROM hotel WHERE nazwa = 'Dach nad palma');
 
 INSERT INTO hotel (nazwa, adres)
@@ -96,8 +96,8 @@ SELECT 'Brak', 0.00
 WHERE NOT EXISTS (SELECT 1 FROM wyzywienie WHERE LOWER(typ) = LOWER('Brak'));
 
 INSERT INTO wyzywienie (typ, cena)
-SELECT 'Śniadanie', 40.00
-WHERE NOT EXISTS (SELECT 1 FROM wyzywienie WHERE LOWER(typ) = LOWER('Śniadanie'));
+SELECT 'Sniadanie', 40.00
+WHERE NOT EXISTS (SELECT 1 FROM wyzywienie WHERE LOWER(typ) = LOWER('Sniadanie'));
 
 INSERT INTO wyzywienie (typ, cena)
 SELECT 'All Inclusive', 150.00
@@ -106,8 +106,8 @@ WHERE NOT EXISTS (SELECT 1 FROM wyzywienie WHERE LOWER(typ) = LOWER('All Inclusi
 
 -- 4) USŁUGI
 INSERT INTO usluga (nazwa, billing_type, cena)
-SELECT 'Siłownia', 'PER_PERSON_PER_DAY', 20.00
-WHERE NOT EXISTS (SELECT 1 FROM usluga WHERE nazwa='Siłownia');
+SELECT 'Silownia', 'PER_PERSON_PER_DAY', 20.00
+WHERE NOT EXISTS (SELECT 1 FROM usluga WHERE nazwa='Silownia');
 
 INSERT INTO usluga (nazwa, billing_type, cena)
 SELECT 'Basen', 'PER_PERSON_PER_DAY', 25.00

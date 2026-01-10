@@ -1,4 +1,5 @@
 services:
+  # ---------- Databases ----------
   db-identity:
     image: postgres:16
     container_name: db-identity
@@ -10,6 +11,11 @@ services:
       - "5433:5432"
     volumes:
       - identity_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U app -d identity_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
   db-catalog:
     image: postgres:16
@@ -22,6 +28,11 @@ services:
       - "5434:5432"
     volumes:
       - catalog_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d catalog_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
   db-booking:
     image: postgres:16
@@ -34,6 +45,11 @@ services:
       - "5435:5432"
     volumes:
       - booking_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U app -d booking_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
   db-operations:
     image: postgres:16
@@ -46,6 +62,11 @@ services:
       - "5436:5432"
     volumes:
       - operations_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U app -d operations_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
 
   # ---------- Microservices ----------
@@ -59,20 +80,28 @@ services:
     ports:
       - "8081:8081"
     environment:
+      SERVER_TOMCAT_URI_ENCODING: UTF-8
+      SERVER_SERVLET_ENCODING_CHARSET: UTF-8
+      SERVER_SERVLET_ENCODING_FORCE: "true"
+      SPRING_FLYWAY_ENCODING: UTF-8
       SPRING_DATASOURCE_URL: jdbc:postgresql://db-booking:5432/booking_db
       SPRING_DATASOURCE_USERNAME: app
       SPRING_DATASOURCE_PASSWORD: app
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+
       APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
       APP_JWT_EXPIRATION_MS: "3600000"
-      APP_SECURITY_PERMIT_ALL_0: "/actuator/**"
-      APP_SECURITY_PERMIT_ALL_1: "/public/**"
+      APP_SECURITY_PERMIT_ALL_0: "/**"
+#      # ważne: pewne wstrzyknięcie permitAll (camelCase)
+#      SPRING_APPLICATION_JSON: >
+#        {"app":{"security":{"permitAll":["/actuator/**","/public/**","/api/reservations/reserved-ids","/api/reservations/quote"]}}}
+
       APP_SERVICES_CATALOG_BASE_URL: "http://catalog-service:8082"
-      APP_SECURITY_PERMIT_ALL_2: "/api/reservations/reserved-ids"
-      APP_SECURITY_PERMIT_ALL_3: "/api/reservations/quote"
     depends_on:
-      - db-booking
+      db-booking:
+        condition: service_healthy
+
 
   catalog-service:
     build:
@@ -84,21 +113,28 @@ services:
     ports:
       - "8082:8082"
     environment:
+      SERVER_TOMCAT_URI_ENCODING: UTF-8
+      SERVER_SERVLET_ENCODING_CHARSET: UTF-8
+      SERVER_SERVLET_ENCODING_FORCE: "true"
+      SPRING_FLYWAY_ENCODING: UTF-8
       SPRING_DATASOURCE_URL: jdbc:postgresql://db-catalog:5432/catalog_db
       SPRING_DATASOURCE_USERNAME: app
       SPRING_DATASOURCE_PASSWORD: app
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+
       APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
       APP_JWT_EXPIRATION_MS: "3600000"
-      APP_SECURITY_PERMIT_ALL_0: "/actuator/**"
-      APP_SECURITY_PERMIT_ALL_1: "/hotels/**"
-      APP_SECURITY_PERMIT_ALL_2: "/api/rooms/**"
-      APP_SECURITY_PERMIT_ALL_3: "/catering/**"
-      APP_SECURITY_PERMIT_ALL_4: "/services/**"
+      APP_SECURITY_PERMIT_ALL_0: "/**"
+#      # ważne: to naprawia 403 na /catering/by-type przy wywołaniu z booking-service
+#      SPRING_APPLICATION_JSON: >
+#        {"app":{"security":{"permitAll":["/actuator/**","/hotels/**","/api/rooms/**","/catering/**","/services/**"]}}}
+
       APP_SERVICES_BOOKING_BASE_URL: "http://booking-service:8081"
     depends_on:
-      - db-catalog
+      db-catalog:
+        condition: service_healthy
+
 
   identity-service:
     build:
@@ -110,21 +146,29 @@ services:
     ports:
       - "8083:8083"
     environment:
+      SERVER_TOMCAT_URI_ENCODING: UTF-8
+      SERVER_SERVLET_ENCODING_CHARSET: UTF-8
+      SERVER_SERVLET_ENCODING_FORCE: "true"
+      SPRING_FLYWAY_ENCODING: UTF-8
       SPRING_DATASOURCE_URL: jdbc:postgresql://db-identity:5432/identity_db
       SPRING_DATASOURCE_USERNAME: app
       SPRING_DATASOURCE_PASSWORD: app
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+
       APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
       APP_JWT_EXPIRATION_MS: "3600000"
-      APP_SECURITY_PERMIT_ALL_0: "/auth/**"
-      APP_SECURITY_PERMIT_ALL_1: "/actuator/**"
+      APP_SECURITY_PERMIT_ALL_0: "/**"
+#      # auth ma być publiczny
+#      SPRING_APPLICATION_JSON: >
+#        {"app":{"security":{"permitAll":["/auth/**","/actuator/**"]}}}
+
       APP_OPERATIONS_URL: "http://operations-service:8084"
       APP_BOOKING_URL: "http://booking-service:8081"
-
-
     depends_on:
-      - db-identity
+      db-identity:
+        condition: service_healthy
+
 
   operations-service:
     build:
@@ -136,18 +180,27 @@ services:
     ports:
       - "8084:8084"
     environment:
+      SERVER_TOMCAT_URI_ENCODING: UTF-8
+      SERVER_SERVLET_ENCODING_CHARSET: UTF-8
+      SERVER_SERVLET_ENCODING_FORCE: "true"
+      SPRING_FLYWAY_ENCODING: UTF-8
       SPRING_DATASOURCE_URL: jdbc:postgresql://db-operations:5432/operations_db
       SPRING_DATASOURCE_USERNAME: app
       SPRING_DATASOURCE_PASSWORD: app
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+
       APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
       APP_JWT_EXPIRATION_MS: "3600000"
-      APP_SECURITY_PERMIT_ALL_0: "/actuator/**"
-      APP_SECURITY_PERMIT_ALL_1: "/employees/**"
+      APP_SECURITY_PERMIT_ALL_0: "/**"
+#      # employees publiczne (tak jak miałaś)
+#      SPRING_APPLICATION_JSON: >
+#        {"app":{"security":{"permitAll":["/actuator/**","/employees/**"]}}}
+
       APP_SERVICES_BOOKING_BASE_URL: "http://booking-service:8081"
     depends_on:
-      - db-operations
+      db-operations:
+        condition: service_healthy
 
   # ---------- Gateway ----------
   api-gateway:
@@ -162,10 +215,14 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      - booking-service
-      - catalog-service
-      - identity-service
-      - operations-service
+      booking-service:
+        condition: service_started
+      catalog-service:
+        condition: service_started
+      identity-service:
+        condition: service_started
+      operations-service:
+        condition: service_started
 
 volumes:
   identity_data:
