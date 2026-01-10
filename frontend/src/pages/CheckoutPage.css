@@ -1,0 +1,25 @@
+.checkout-main { padding: 24px 16px; display: flex; justify-content: center; }
+.checkout-card {
+  width: min(1100px, 100%);
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(12, 18, 32, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(20px);
+}
+.summary {
+  margin: 10px 0 14px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.18);
+}
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.box { padding: 12px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(0,0,0,0.18); }
+.h3 { margin: 0 0 10px; font-size: 16px; }
+.checks { display: grid; gap: 10px; }
+.check { display: flex; gap: 10px; align-items: center; }
+.actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.quote { margin-top: 12px; }

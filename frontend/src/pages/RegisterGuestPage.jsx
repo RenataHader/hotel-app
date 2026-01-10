@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { registerGuest } from "../api/auth";
+import "./RegisterGuestPage.css";
 
 export default function RegisterGuestPage() {
   const nav = useNavigate();
@@ -27,7 +28,6 @@ export default function RegisterGuestPage() {
     try {
       await registerGuest(form);
       setOk("Konto utworzone! Możesz się teraz zalogować.");
-      // po 1s przerzucamy na login
       setTimeout(() => nav("/login"), 900);
     } catch (e2) {
       console.error(e2);
@@ -40,85 +40,103 @@ export default function RegisterGuestPage() {
   }
 
   return (
-    <div style={{ fontFamily: "sans-serif", maxWidth: 520, margin: "40px auto" }}>
-      <h1>Rejestracja gościa</h1>
+    <div className="auth-page">
+      <div className="auth-card auth-card--wide">
+        <h1 className="auth-title">Rejestracja</h1>
+        <p className="auth-subtitle">Utwórz konto gościa, aby przejść dalej</p>
 
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
-        <label>
-          Email
-          <input
-            value={form.email}
-            onChange={(e) => setField("email", e.target.value)}
-            style={{ width: "100%", padding: 10 }}
-            type="email"
-            required
-          />
-        </label>
+        <form onSubmit={onSubmit} className="auth-form">
+          <div className="field">
+            <label>
+              Email
+              <input
+                className="input"
+                value={form.email}
+                onChange={(e) => setField("email", e.target.value)}
+                type="email"
+                required
+              />
+            </label>
+          </div>
 
-        <label>
-          Hasło
-          <input
-            value={form.password}
-            onChange={(e) => setField("password", e.target.value)}
-            style={{ width: "100%", padding: 10 }}
-            type="password"
-            required
-          />
-        </label>
+          <div className="field">
+            <label>
+              Hasło
+              <input
+                className="input"
+                value={form.password}
+                onChange={(e) => setField("password", e.target.value)}
+                type="password"
+                required
+              />
+            </label>
+          </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <label>
-            Imię
-            <input
-              value={form.firstName}
-              onChange={(e) => setField("firstName", e.target.value)}
-              style={{ width: "100%", padding: 10 }}
-              required
-            />
-          </label>
+          <div className="grid-2">
+            <div className="field">
+              <label>
+                Imię
+                <input
+                  className="input"
+                  value={form.firstName}
+                  onChange={(e) => setField("firstName", e.target.value)}
+                  required
+                />
+              </label>
+            </div>
 
-          <label>
-            Nazwisko
-            <input
-              value={form.lastName}
-              onChange={(e) => setField("lastName", e.target.value)}
-              style={{ width: "100%", padding: 10 }}
-              required
-            />
-          </label>
-        </div>
+            <div className="field">
+              <label>
+                Nazwisko
+                <input
+                  className="input"
+                  value={form.lastName}
+                  onChange={(e) => setField("lastName", e.target.value)}
+                  required
+                />
+              </label>
+            </div>
+          </div>
 
-        <label>
-          Telefon
-          <input
-            value={form.phoneNumber}
-            onChange={(e) => setField("phoneNumber", e.target.value)}
-            style={{ width: "100%", padding: 10 }}
-            required
-          />
-        </label>
+          <div className="field">
+            <label>
+              Telefon
+              <input
+                className="input"
+                value={form.phoneNumber}
+                onChange={(e) => setField("phoneNumber", e.target.value)}
+                required
+              />
+            </label>
+          </div>
 
-        <label>
-          Numer dokumentu
-          <input
-            value={form.documentNumber}
-            onChange={(e) => setField("documentNumber", e.target.value)}
-            style={{ width: "100%", padding: 10 }}
-            required
-          />
-        </label>
+          <div className="field">
+            <label>
+              Numer dokumentu
+              <input
+                className="input"
+                value={form.documentNumber}
+                onChange={(e) => setField("documentNumber", e.target.value)}
+                required
+              />
+            </label>
+          </div>
 
-        {err && <div style={{ color: "crimson" }}>{err}</div>}
-        {ok && <div style={{ color: "green" }}>{ok}</div>}
+          {err && <div className="error">{err}</div>}
+          {ok && <div className="success">{ok}</div>}
 
-        <button style={{ padding: 10 }} type="submit">
-          Utwórz konto
-        </button>
-      </form>
+          <button className="btn" type="submit">
+            Utwórz konto
+          </button>
+        </form>
 
-      <p style={{ marginTop: 14 }}>
-        Masz już konto? <Link to="/login">Zaloguj się</Link>
-      </p>
+        <p className="auth-footer">
+          Masz już konto?{" "}
+          <Link className="auth-link" to="/login">
+            Zaloguj się
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

@@ -9,6 +9,27 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(Boolean(token));
 
   useEffect(() => {
+    function onLogout() {
+      setToken(null);
+      setUser(null);
+      setLoading(false);
+    }
+
+    function onStorage(e) {
+      if (e.key === "token") {
+        setToken(localStorage.getItem("token"));
+      }
+    }
+
+    window.addEventListener("auth:logout", onLogout);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("auth:logout", onLogout);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function loadMe() {
@@ -22,7 +43,6 @@ export function AuthProvider({ children }) {
         const u = await apiMe();
         if (!cancelled) setUser(u);
       } catch (e) {
-        // token nie działa / backend nie wstał
         console.error(e);
         localStorage.removeItem("token");
         if (!cancelled) {
@@ -35,27 +55,35 @@ export function AuthProvider({ children }) {
     }
 
     loadMe();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
-  const value = useMemo(() => ({
-    token,
-    user,
-    loading,
-    async signIn(email, password) {
-      const res = await apiLogin(email, password);
-      localStorage.setItem("token", res.token);
-      setToken(res.token);
-      const u = await apiMe();
-      setUser(u);
-      return u;
-    },
-    signOut() {
-      localStorage.removeItem("token");
-      setToken(null);
-      setUser(null);
-    },
-  }), [token, user, loading]);
+  const value = useMemo(
+    () => ({
+      token,
+      user,
+      loading,
+      async signIn(email, password) {
+        const res = await apiLogin(email, password);
+        localStorage.setItem("token", res.token);
+        setToken(res.token);
+        const u = await apiMe();
+        setUser(u);
+        return u;
+      },
+      signOut() {
+        localStorage.removeItem("token");
+        setToken(null);
+        setUser(null);
+        try {
+          window.dispatchEvent(new Event("auth:logout"));
+        } catch {}
+      },
+    }),
+    [token, user, loading]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

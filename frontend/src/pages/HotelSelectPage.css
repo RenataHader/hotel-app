@@ -1,0 +1,49 @@
+.auth-card--wide {
+  max-width: 520px;
+}
+
+.hotel-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.hotel-item {
+  width: 100%;
+  text-align: left;
+
+  padding: 12px 14px;
+  border-radius: 12px;
+
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.92);
+
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  transition: transform 0.12s ease, filter 0.12s ease, border-color 0.12s ease;
+}
+
+.hotel-item:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.55);
+}
+
+.hotel-item:active {
+  transform: translateY(0);
+}
+
+.hotel-arrow {
+  opacity: 0.8;
+  font-weight: 700;
+}
+
+.hint {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 8px 0 0;
+  font-size: 14px;
+}

@@ -4,65 +4,124 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: rgba(255, 255, 255, 0.92);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* wysokość paska – do wyliczeń dla auth pod topbarem */
+  --topbar-space: 110px;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+*, *::before, *::after {
+  box-sizing: border-box;
 }
-a:hover {
-  color: #535bf2;
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background: #0b1020; /* fallback */
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* linki */
+a {
+  font-weight: 600;
+  color: #a5b4fc;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
 }
 
+/* baza button */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
   font-size: 1em;
-  font-weight: 500;
+  font-weight: 600;
   font-family: inherit;
   background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:hover {
-  border-color: #646cff;
-}
+button:hover { border-color: #646cff; }
 button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+button:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
+
+/* ===== TŁO NA CAŁĄ APLIKACJĘ ===== */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
+.app-bg-layer {
+  position: absolute;
+  inset: 0;
+
+  background-size: cover;          
+  background-position: center;     
+  background-repeat: no-repeat;
+
+  /* delikatny “filmowy” zoom */
+  transform: scale(1.02);
+  opacity: 0;
+
+  will-change: opacity, transform;
+  transition: opacity 1800ms ease-in-out, transform 1800ms ease-in-out;
+}
+
+.app-bg-layer.is-visible {
+  opacity: 1;
+  transform: scale(1.00);
+}
+
+/* przyciemnienie tła, żeby UI było czytelne */
+.app-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.38);
+}
+
+/* wszystko nad tłem */
+.app-shell {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+/* auth strony pod topbarem:
+   1) niech zajmują “resztę ekranu”
+   2) niech nie wchodzą pod pasek
+*/
+.with-topbar .auth-page {
+  min-height: calc(100vh - var(--topbar-space));
+  padding-top: 10px;
+}
+
+/* jasny motyw */
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
-    background-color: #ffffff;
   }
-  a:hover {
-    color: #747bff;
+  a {
+    color: #4f46e5;
   }
   button {
     background-color: #f9f9f9;
+  }
+  .app-bg::after {
+    background: rgba(255, 255, 255, 0.18);
   }
 }

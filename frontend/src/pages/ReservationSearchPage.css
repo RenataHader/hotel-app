@@ -1,0 +1,178 @@
+/* ReservationSearchPage.css */
+
+/* Jeśli masz już te klasy w swoim pliku (reserv-main, glass-card itd.)
+   to możesz zostawić swoje — poniżej są DODATKOWE style pod kafelki/paginację.
+   Jeśli coś się dubluje, to weź te wersje z dołu. */
+
+.results-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.results-count {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+}
+
+/* 3 kafelki w rzędzie */
+.offers {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* responsive: 2 kafelki, potem 1 */
+@media (max-width: 1100px) {
+  .offers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .offers {
+    grid-template-columns: 1fr;
+  }
+}
+
+.offer-card {
+  width: 100%;
+  text-align: left;
+  border-radius: 16px;
+  padding: 12px 12px;
+  cursor: pointer;
+
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.92);
+
+  transition: transform 120ms ease, filter 120ms ease, border-color 120ms ease;
+}
+
+.offer-card:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.65);
+}
+
+/* zaznaczenie: niebieskie */
+.offer-card.is-selected {
+  border-color: rgba(99, 102, 241, 0.95);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+}
+
+.offer-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.offer-title {
+  font-size: 14px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.offer-price {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.offer-meta {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* szczegóły po wyborze */
+.offer-rooms {
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.offer-rooms ul {
+  margin: 6px 0 0 18px;
+}
+
+.offer-more {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.offer-select {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+/* chip NIEBIESKI */
+.chip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 12px;
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+
+.chip--ghost {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+}
+
+.pager-bottom {
+  margin-top: 12px;
+}
+
+/* Pagination */
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pager-pages {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pager-btn,
+.pager-page {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  padding: 8px 10px;
+  font-weight: 800;
+}
+
+.pager-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pager-page.is-active {
+  border-color: rgba(99, 102, 241, 0.85);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.14);
+}
+
+.pager-dots {
+  opacity: 0.7;
+  padding: 0 4px;
+}
