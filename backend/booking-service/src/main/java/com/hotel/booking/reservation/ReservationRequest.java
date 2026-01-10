@@ -19,8 +19,8 @@ public class ReservationRequest {
     @Min(value = 1, message = "guestCount musi być >= 1")
     private Integer guestCount;
 
-    @NotBlank(message = "mealType jest wymagane (np. Brak / Śniadanie / All Inclusive)")
-    private String mealType;
+    @NotNull(message = "mealId jest wymagane")
+    private Integer mealId;
 
     private List<Integer> serviceIds;
 

@@ -81,4 +81,12 @@ public class CatalogClient {
             BigDecimal price,
             String status
     ) {}
+
+    public MealSnapshot getMealById(Integer mealId) {
+        if (mealId == null) return null;
+        return restTemplate.getForObject(
+                catalogBaseUrl + "/catering/" + mealId,
+                MealSnapshot.class
+        );
+    }
 }

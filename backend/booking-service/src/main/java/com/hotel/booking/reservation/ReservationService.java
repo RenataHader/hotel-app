@@ -85,21 +85,22 @@ public class ReservationService {
 
         SelectionPricing pricing = priceSelection(selection.rooms(), nights);
 
-        // --- MEAL (obowiązkowe) ---
-        String mealType = request.getMealType() == null ? null : request.getMealType().trim();
-        if (mealType == null || mealType.isBlank()) {
-            throw new IllegalArgumentException("mealType jest wymagane");
-        }
-
-        CatalogClient.MealSnapshot meal = catalogClient.getMealByType(mealType);
-        if (meal == null || meal.price() == null) {
-            throw new IllegalArgumentException("Nieprawidłowe mealType: " + mealType);
-        }
-
         if (request.getGuestCount() == null || request.getGuestCount() <= 0) {
             throw new IllegalArgumentException("guestCount jest wymagane do wyceny (wyżywienie/usługi)");
         }
 
+        // --- MEAL (obowiązkowe) -> PO ID ---
+        Integer mealId = request.getMealId();
+        if (mealId == null) {
+            throw new IllegalArgumentException("mealId jest wymagane");
+        }
+
+        CatalogClient.MealSnapshot meal = catalogClient.getMealById(mealId);
+        if (meal == null || meal.price() == null) {
+            throw new IllegalArgumentException("Nieprawidłowe mealId: " + mealId);
+        }
+
+        String mealType = meal.type(); // tylko do response / snapshotu
         BigDecimal mealPricePerPerson = money(meal.price());
         BigDecimal mealTotal = mealPricePerPerson
                 .multiply(BigDecimal.valueOf(request.getGuestCount()))
@@ -175,7 +176,6 @@ public class ReservationService {
         ReservationQuoteResponse quote = quote(request);
         BigDecimal serverTotal = money(quote.getTotal());
 
-        // opcjonalna ochrona przed "cena się zmieniła"
         if (request.getClientPrice() != null) {
             BigDecimal client = money(request.getClientPrice());
             if (client.compareTo(serverTotal) != 0) {
@@ -183,13 +183,11 @@ public class ReservationService {
             }
         }
 
-        // bezpieczeństwo: sprawdź overlap na pokojach wybranych przez quote
         List<Integer> roomIds = quote.getRooms().stream().map(ReservedRoomResponse::getRoomId).toList();
         if (reservationRepo.existsAnyRoomOverlap(roomIds, request.getCheckInDate(), request.getCheckOutDate())) {
             throw new IllegalArgumentException("Co najmniej jeden z wybranych pokoi jest już zajęty w tym terminie");
         }
 
-        // dodatkowa walidacja pojemności
         int totalBeds = quote.getTotalBeds() == null ? 0 : quote.getTotalBeds();
         if (request.getGuestCount() != null && request.getGuestCount() > 0 && totalBeds < request.getGuestCount()) {
             throw new IllegalArgumentException("Za mało miejsc (łóżek) dla guestCount=" + request.getGuestCount());
@@ -212,7 +210,7 @@ public class ReservationService {
 
         reservation.setPrice(serverTotal);
 
-        // meal snapshot
+        // meal snapshot (z quote, bo już policzone)
         reservation.setMealType(quote.getMealType());
         reservation.setMealPricePerPerson(quote.getMealPricePerPerson());
 
@@ -220,12 +218,10 @@ public class ReservationService {
         List<Integer> reqServiceIds = request.getServiceIds() == null ? List.of() : request.getServiceIds();
         reservation.setServiceIds(new ArrayList<>(reqServiceIds.stream().filter(Objects::nonNull).toList()));
 
-        // pokoje: pierwszy jako "główny", plus lista wszystkich
         reservation.setRoomId(rooms.get(0).getRoomId());
         reservation.setRoomNumber(rooms.get(0).getRoomNumber());
         reservation.setRoomIds(new ArrayList<>(rooms.stream().map(ReservedRoomResponse::getRoomId).toList()));
 
-        // jeśli masz kolumnę roomType i chcesz snapshot:
         reservation.setRoomType(computeRoomType(rooms));
 
         reservation.setStatus(ReservationStatus.CONFIRMED);
@@ -306,11 +302,6 @@ public class ReservationService {
         reservationRepo.save(reservation);
     }
 
-    /**
-     * Dobór pokoi:
-     * - jeśli request ma roomId/roomIds: bierze te pokoje z catalog-service
-     * - jeśli nie: auto-dobór po guestCount, z listy dostępnych pokoi w terminie
-     */
     private Selection selectRoomsForRequest(ReservationRequest request) {
         List<Integer> requested = normalizeRoomIds(request);
 
@@ -348,7 +339,6 @@ public class ReservationService {
         );
         if (available.isEmpty()) throw new IllegalArgumentException("Brak dostępnych pokoi w tym terminie");
 
-        // sort: najwięcej łóżek, potem najtaniej
         available.sort(Comparator
                 .comparing((CatalogClient.RoomSnapshot r) -> safeInt(r.numberOfBeds())).reversed()
                 .thenComparing(r -> safeMoney(r.price()))
@@ -485,8 +475,6 @@ public class ReservationService {
                     .toList();
         }
 
-
-        // Services do response (opcjonalnie z nazwami z catalog-service)
         List<SelectedServiceResponse> services = List.of();
         try {
             long nights = (r.getCheckInDate() != null && r.getCheckOutDate() != null)
@@ -504,7 +492,6 @@ public class ReservationService {
                 BigDecimal unit = s.price() == null ? null : money(s.price());
                 BigDecimal total = null;
 
-                // jeśli chcesz pokazać totalPrice na liście rezerwacji:
                 if (unit != null && s.billingType() != null && nights > 0 && r.getGuestCount() != null) {
                     try {
                         ServiceBillingType billing = ServiceBillingType.valueOf(s.billingType());
@@ -515,9 +502,7 @@ public class ReservationService {
                                     .multiply(BigDecimal.valueOf(r.getGuestCount()));
                         };
                         total = money(total);
-                    } catch (Exception ignored) {
-                        // billingType nie pasuje -> zostaw total null
-                    }
+                    } catch (Exception ignored) {}
                 }
 
                 tmp.add(SelectedServiceResponse.builder()
@@ -530,8 +515,7 @@ public class ReservationService {
             }
 
             services = tmp;
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
 
         return ReservationResponse.builder()
                 .id(r.getId())
@@ -548,7 +532,6 @@ public class ReservationService {
                 .mealType(r.getMealType())
                 .mealPricePerPerson(r.getMealPricePerPerson())
                 .services(services)
-
                 .price(r.getPrice())
                 .status(r.getStatus() == null ? null : r.getStatus().name())
                 .build();

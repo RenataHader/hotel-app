@@ -27,4 +27,10 @@ public class MealController {
         meal.setId(null);
         return repo.save(meal);
     }
+
+    @GetMapping("/{id}")
+    public Meal getById(@PathVariable Integer id) {
+        return repo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono wyżywienia id=" + id));
+    }
 }
