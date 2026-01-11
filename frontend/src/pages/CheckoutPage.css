@@ -1,13 +1,26 @@
-.checkout-main { padding: 24px 16px; display: flex; justify-content: center; }
+/* src/pages/CheckoutPage.css */
+
+.checkout-main {
+  padding: 24px 16px;
+  display: flex;
+  justify-content: center;
+}
+
 .checkout-card {
-  width: min(1100px, 100%);
+  width: min(500px, 100%);
   border-radius: 18px;
   padding: 16px;
+
   background: rgba(12, 18, 32, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  font-size: 16px;
 }
+
 .summary {
   margin: 10px 0 14px;
   padding: 12px;
@@ -15,11 +28,131 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(0, 0, 0, 0.18);
 }
-.grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
-.box { padding: 12px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(0,0,0,0.18); }
-.h3 { margin: 0 0 10px; font-size: 16px; }
-.checks { display: grid; gap: 10px; }
-.check { display: flex; gap: 10px; align-items: center; }
-.actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-.quote { margin-top: 12px; }
+
+.error {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 92, 92, 0.35);
+  background: rgba(255, 92, 92, 0.12);
+}
+
+.info {
+  margin: 10px 0;
+  opacity: 0.9;
+}
+
+.placeholder {
+  margin: 10px 0;
+  opacity: 0.9;
+}
+
+/* układ: zawsze 1 kolumna */
+.grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+.box {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.h3 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+/* listy usług */
+.checks {
+  display: grid;
+  gap: 10px;
+}
+
+.check {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* przyciski (góra) */
+.actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+/* PODSUMOWANIE (QUOTE) */
+.quote {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.quote-grid {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.quote-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 12px;
+
+  font-size: 16px;
+}
+
+.quote-sep {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.14);
+  margin: 4px 2px;
+}
+
+.quote-total {
+  font-size: 18px;
+}
+
+.quote-actions {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+/* logowanie/rejestracja */
+.quote-actions-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* UJEDNOLICONE: szerokość + centrowanie + font przycisków */
+.actions > .search-btn,
+.quote-actions > .search-btn,
+.quote-actions-row > .btn-ghost {
+  width: 200px;
+  max-width: 100%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+}
+
+/* przycisk w .quote-actions jest w gridzie */
+.quote-actions > .search-btn {
+  justify-self: center;
+}

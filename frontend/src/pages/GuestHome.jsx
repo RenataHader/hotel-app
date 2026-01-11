@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { getMyReservations } from "../api/booking";
+import { getMyReservations, getGuests, cancelReservation } from "../api/booking";
+import { getHotels } from "../api/catalog";
 import "./GuestHome.css";
 
 function shortDate(v) {
@@ -41,48 +42,338 @@ function pickField(r, paths, fallback = "") {
   return fallback;
 }
 
+function parseISOToUTC(iso) {
+  if (!iso || typeof iso !== "string") return null;
+  const [y, m, d] = iso.slice(0, 10).split("-").map((x) => Number(x));
+  if (!y || !m || !d) return null;
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
+function nightsBetween(fromISO, toISO) {
+  const a = parseISOToUTC(fromISO);
+  const b = parseISOToUTC(toISO);
+  if (!a || !b) return "";
+  const diff = Math.round((b.getTime() - a.getTime()) / 86400000);
+  return diff >= 0 ? diff : "";
+}
+
+function moneyPLN(v) {
+  if (v === null || v === undefined || v === "") return "";
+  const n = Number(v);
+  if (Number.isFinite(n)) return n % 1 === 0 ? String(n) : n.toFixed(2);
+  return String(v);
+}
+
+function ReservationDetailsModal({ reservation, hotels, onClose, onCancel }) {
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  function onBackdropDown(e) {
+    if (!panelRef.current) return;
+    if (panelRef.current.contains(e.target)) return;
+    onClose();
+  }
+
+  const id = pickField(reservation, ["id", "reservationId", "bookingId"], "?");
+
+  const hotelId = pickField(reservation, ["hotelId", "hotel.id"], "");
+  const hotelName = pickField(reservation, ["hotelName", "hotel.name", "hotel"], "");
+
+  const catalogHotel = Array.isArray(hotels)
+    ? hotels.find((h) => String(h?.id) === String(hotelId))
+    : null;
+
+  const displayHotelName =
+    hotelName || catalogHotel?.name || (hotelId ? `Hotel #${hotelId}` : "Hotel");
+
+  const displayHotelAddress =
+    pickField(reservation, ["hotelAddress", "hotel.address", "address"], "") ||
+    catalogHotel?.address ||
+    "";
+
+  const status = pickField(reservation, ["status", "state"], "");
+  const statusUpper = String(status || "").toUpperCase();
+
+  const from = shortDate(pickField(reservation, ["checkInDate", "from", "startDate", "dateFrom"], ""));
+  const to = shortDate(pickField(reservation, ["checkOutDate", "to", "endDate", "dateTo"], ""));
+  const nights = nightsBetween(from, to);
+  const nightsLabel = nights !== "" ? `${nights}` : "—";
+
+  const guests = pickField(reservation, ["guestCount", "guests", "numberOfGuests"], "");
+  const totalBeds = pickField(reservation, ["totalBeds"], "");
+  const guestName = pickField(reservation, ["guestFullName", "guestName"], "");
+  const price = pickField(reservation, ["price", "total", "totalPrice", "clientPrice"], "");
+
+  const mealTypeRaw = pickField(reservation, ["mealType"], "");
+  const mealType = mealTypeRaw ? String(mealTypeRaw) : "Brak";
+
+  const services = Array.isArray(reservation?.services) ? reservation.services : [];
+  const rooms = Array.isArray(reservation?.rooms) ? reservation.rooms : [];
+
+  // Minimalna walidacja możliwości anulowania (frontend)
+  const canCancelByStatus = !["CANCELLED", "CHECKED_IN", "CHECKED_OUT"].includes(statusUpper);
+
+  const checkIn = parseISOToUTC(from);
+  const now = new Date();
+  const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const canCancelByDate = checkIn ? todayUTC.getTime() < checkIn.getTime() : true;
+
+  const canCancel = canCancelByStatus && canCancelByDate;
+
+  return (
+    <div className="modal-backdrop" onMouseDown={onBackdropDown} role="dialog" aria-modal="true">
+      <div className="modal-panel" ref={panelRef}>
+        <div className="modal-head">
+          <div className="modal-title">
+            Szczegóły rezerwacji {id !== "?" ? `#${id}` : ""}
+            {status ? <span className="pill">{String(status)}</span> : null}
+          </div>
+
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Zamknij">
+            ✕
+          </button>
+        </div>
+
+        <div className="modal-sub">
+          <b>{displayHotelName}</b>
+          {displayHotelAddress ? <div className="muted">{displayHotelAddress}</div> : null}
+        </div>
+
+        <div className="modal-grid">
+          <div className="modal-box">
+            <h3 className="modal-h3">Podstawowe informacje</h3>
+
+            <div className="kv">
+              {guestName ? (
+                <div className="kv-row">
+                  <span className="muted">Gość</span>
+                  <b>{guestName}</b>
+                </div>
+              ) : null}
+
+              <div className="kv-row">
+                <span className="muted">Od</span>
+                <b>{from || "—"}</b>
+              </div>
+              <div className="kv-row">
+                <span className="muted">Do</span>
+                <b>{to || "—"}</b>
+              </div>
+              <div className="kv-row">
+                <span className="muted">Liczba nocy</span>
+                <b>{nightsLabel}</b>
+              </div>
+              <div className="kv-row">
+                <span className="muted">Liczba gości</span>
+                <b>{guests || "—"}</b>
+              </div>
+              <div className="kv-row">
+                <span className="muted">Łącznie łóżek</span>
+                <b>{totalBeds || "—"}</b>
+              </div>
+              <div className="kv-row">
+                <span className="muted">Cena łączna</span>
+                <b>{price !== "" ? `${moneyPLN(price)} PLN` : "—"}</b>
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-box">
+            <h3 className="modal-h3">Dodatkowe informacje</h3>
+
+            <div className="modal-list">
+              <div className="modal-list-title">Wyżywienie</div>
+              <div className="kv">
+                <div className="kv-row">
+                  <span className="muted">Typ</span>
+                  <b>{mealType}</b>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-list">
+              <div className="modal-list-title">Usługi</div>
+
+              {services.length === 0 ? (
+                <div className="muted">Brak wykupionych usług.</div>
+              ) : (
+                <ul className="list">
+                  {services.map((s, i) => (
+                    <li key={s?.id ?? `${s?.name ?? "service"}-${i}`}>
+                      <div className="service-row">
+                        <div>
+                          <b>{s?.name || "Usługa"}</b>
+                        </div>
+                        <div className="service-price">
+                          {s?.totalPrice !== undefined && s?.totalPrice !== null && s?.totalPrice !== ""
+                            ? `${moneyPLN(s.totalPrice)} PLN`
+                            : s?.unitPrice !== undefined && s?.unitPrice !== null && s?.unitPrice !== ""
+                              ? `${moneyPLN(s.unitPrice)} PLN`
+                              : "—"}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {Array.isArray(rooms) && rooms.length > 0 ? (
+              <div className="modal-list">
+                <div className="modal-list-title">Szczegóły pokoi</div>
+                <ul className="list">
+                  {rooms.map((rr, idx) => (
+                    <li key={`${rr?.roomId ?? "r"}-${idx}`}>
+                      <b>{rr?.type || "Pokój"}</b>
+                      {rr?.numberOfBeds !== undefined && rr?.numberOfBeds !== null ? (
+                        <span className="muted"> — {rr.numberOfBeds} łóżka</span>
+                      ) : null}
+                      {rr?.pricePerNight !== undefined && rr?.pricePerNight !== null && rr?.pricePerNight !== "" ? (
+                        <span className="muted"> — {moneyPLN(rr.pricePerNight)} PLN / noc</span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="modal-actions">
+          <button
+            type="button"
+            className="btn-small danger"
+            onClick={() => onCancel?.(reservation)}
+            disabled={!canCancel}
+            title={!canCancel ? "Nie można anulować (status lub termin)." : "Anuluj rezerwację"}
+          >
+            Anuluj rezerwację
+          </button>
+
+          <button type="button" className="btn-small" onClick={onClose}>
+            Zamknij
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmCancelModal({ reservation, onClose, onConfirm, loading, error }) {
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  function onBackdropDown(e) {
+    if (!panelRef.current) return;
+    if (panelRef.current.contains(e.target)) return;
+    onClose();
+  }
+
+  const id = pickField(reservation, ["id", "reservationId", "bookingId"], "?");
+  const hotelName = pickField(reservation, ["hotelName", "hotel.name", "hotel"], "Hotel");
+  const from = shortDate(pickField(reservation, ["checkInDate", "from", "startDate", "dateFrom"], ""));
+  const to = shortDate(pickField(reservation, ["checkOutDate", "to", "endDate", "dateTo"], ""));
+
+  return (
+    <div className="modal-backdrop" onMouseDown={onBackdropDown} role="dialog" aria-modal="true">
+      <div className="modal-panel confirm-panel" ref={panelRef}>
+        <div className="modal-head">
+          <div className="modal-title">Potwierdź anulowanie</div>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Zamknij">
+            ✕
+          </button>
+        </div>
+
+        <div className="modal-body">
+          Czy na pewno chcesz anulować rezerwację <b>{id !== "?" ? `#${id}` : ""}</b> w <b>{hotelName}</b>{" "}
+          ({from} → {to})?
+        </div>
+
+        {error ? <div className="error" style={{ marginTop: 10 }}>{error}</div> : null}
+
+        <div className="modal-actions confirm-actions">
+          <button type="button" className="btn-small" onClick={onClose} disabled={loading}>
+            Nie, wróć
+          </button>
+          <button type="button" className="btn-small danger" onClick={onConfirm} disabled={loading}>
+            {loading ? "Anuluję..." : "Tak, anuluj"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function GuestHome() {
   const { user, signOut } = useAuth();
   const nav = useNavigate();
 
+  const [panel, setPanel] = useState("reservations"); // "reservations" | "profile"
+
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [reservations, setReservations] = useState([]);
-  const [usedEndpoint, setUsedEndpoint] = useState("");
-  const [openId, setOpenId] = useState(null);
 
-  const token = useMemo(() => localStorage.getItem("token"), []);
+  const [hotels, setHotels] = useState([]);
+
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileErr, setProfileErr] = useState("");
+  const [guestProfile, setGuestProfile] = useState(null);
+
+  const [details, setDetails] = useState(null);
+
+  const [confirmCancel, setConfirmCancel] = useState(null);
+  const [canceling, setCanceling] = useState(false);
+  const [cancelErr, setCancelErr] = useState("");
+
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
 
   useEffect(() => {
-    if (!user) {
-      nav("/login");
-      return;
-    }
+    if (!user) nav("/login");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  useEffect(() => {
+    function onDocDown(e) {
+      if (!open) return;
+      if (!menuRef.current) return;
+      if (menuRef.current.contains(e.target)) return;
+      setOpen(false);
+    }
+    function onKey(e) {
+      if (!open) return;
+      if (e.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("mousedown", onDocDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   async function loadReservations() {
     setErr("");
     setLoading(true);
-    setUsedEndpoint("");
-
-    if (!token) {
-      setErr("Brak tokenu — zaloguj się ponownie.");
-      setLoading(false);
-      return;
-    }
-
     try {
       const data = await getMyReservations();
-
-
-      if (typeof data === "string") {
-        throw new Error("Odpowiedź nie jest JSON.");
-      }
-
-      const list = normalizeReservations(data);
-      setReservations(list);
-      setUsedEndpoint(endpoint);
+      setReservations(normalizeReservations(data));
     } catch (e) {
       console.error(e);
       setErr(
@@ -96,30 +387,113 @@ export default function GuestHome() {
     }
   }
 
+  async function loadHotels() {
+    try {
+      const list = await getHotels();
+      setHotels(Array.isArray(list) ? list : []);
+    } catch (e) {
+      console.error("Nie udało się pobrać hoteli:", e);
+      setHotels([]);
+    }
+  }
+
+  async function loadGuestProfile() {
+    setProfileErr("");
+    setProfileLoading(true);
+    try {
+      const guestId = user?.guestId;
+      if (!guestId) {
+        setGuestProfile(null);
+        return;
+      }
+
+      const all = await getGuests();
+      const g = all.find((x) => String(x?.id) === String(guestId)) || null;
+      setGuestProfile(g);
+
+      if (!g) {
+        setProfileErr("Nie znalazłam danych gościa w booking-service (brak rekordu lub inne ID).");
+      }
+    } catch (e) {
+      console.error(e);
+      setProfileErr(
+        e?.response?.data?.message ||
+          (typeof e?.response?.data === "string" ? e.response.data : null) ||
+          e?.message ||
+          "Nie udało się pobrać danych profilu."
+      );
+      setGuestProfile(null);
+    } finally {
+      setProfileLoading(false);
+    }
+  }
+
   useEffect(() => {
-    if (user) loadReservations();
+    if (user) {
+      loadReservations();
+      loadHotels();
+      loadGuestProfile();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  function prettyReservation(r) {
-    const id = pickField(r, ["id", "reservationId", "bookingId"], "?");
-    const hotelName = pickField(r, ["hotelName", "hotel.name", "hotel"], "");
-    const hotelId = pickField(r, ["hotelId", "hotel.id"], "");
-    const from = pickField(r, ["checkInDate", "from", "startDate", "dateFrom"], "");
-    const to = pickField(r, ["checkOutDate", "to", "endDate", "dateTo"], "");
-    const guests = pickField(r, ["guestCount", "guests", "numberOfGuests"], "");
-    const price = pickField(r, ["clientPrice", "total", "totalPrice", "price"], "");
-    const status = pickField(r, ["status", "state"], "");
+  const prettyReservation = useMemo(() => {
+    return (r) => {
+      const id = pickField(r, ["id", "reservationId", "bookingId"], "?");
+      const hotelId = pickField(r, ["hotelId", "hotel.id"], "");
+      const hotelName = pickField(r, ["hotelName", "hotel.name", "hotel"], "");
 
-    return {
-      id,
-      hotelLabel: hotelName || (hotelId ? `Hotel #${hotelId}` : "Hotel"),
-      from: shortDate(from),
-      to: shortDate(to),
-      guests,
-      price,
-      status,
+      const catalogHotel = Array.isArray(hotels)
+        ? hotels.find((h) => String(h?.id) === String(hotelId))
+        : null;
+
+      const hotelLabel =
+        hotelName || catalogHotel?.name || (hotelId ? `Hotel #${hotelId}` : "Hotel");
+
+      const from = pickField(r, ["checkInDate", "from", "startDate", "dateFrom"], "");
+      const to = pickField(r, ["checkOutDate", "to", "endDate", "dateTo"], "");
+      const guests = pickField(r, ["guestCount", "guests", "numberOfGuests"], "");
+      const price = pickField(r, ["clientPrice", "total", "totalPrice", "price"], "");
+      const status = pickField(r, ["status", "state"], "");
+
+      return {
+        id,
+        hotelLabel,
+        from: shortDate(from),
+        to: shortDate(to),
+        guests,
+        price,
+        status,
+      };
     };
+  }, [hotels]);
+
+  async function doCancelConfirmed() {
+    if (!confirmCancel) return;
+
+    setCancelErr("");
+    setCanceling(true);
+    try {
+      const id = pickField(confirmCancel, ["id", "reservationId", "bookingId"], null);
+      if (!id) throw new Error("Brak ID rezerwacji.");
+
+      await cancelReservation(id);
+
+      setConfirmCancel(null);
+      setDetails(null);
+
+      await loadReservations();
+    } catch (e) {
+      console.error(e);
+      setCancelErr(
+        e?.response?.data?.message ||
+          (typeof e?.response?.data === "string" ? e.response.data : null) ||
+          e?.message ||
+          "Nie udało się anulować rezerwacji."
+      );
+    } finally {
+      setCanceling(false);
+    }
   }
 
   return (
@@ -127,100 +501,256 @@ export default function GuestHome() {
       <div className="guest-card">
         <div className="guest-head">
           <div>
-            <h1 className="guest-title">Panel gościa</h1>
-            <p className="guest-sub">
-              Zalogowano jako: <b>{user?.email}</b>
-            </p>
+            <h1 className="guest-title">Panel użytkownika</h1>
           </div>
 
           <div className="guest-actions">
-            <button className="search-btn" type="button" onClick={loadReservations} disabled={loading}>
-              {loading ? "Odświeżam..." : "Odśwież"}
-            </button>
-
             <button
-              className="btn-ghost"
+              className="search-btn"
               type="button"
               onClick={() => {
-                signOut();
-                nav("/login");
+                if (panel === "profile") loadGuestProfile();
+                else loadReservations();
               }}
+              disabled={panel === "profile" ? profileLoading : loading}
             >
-              Wyloguj
+              {panel === "profile"
+                ? profileLoading
+                  ? "Odświeżam..."
+                  : "Odśwież"
+                : loading
+                  ? "Odświeżam..."
+                  : "Odśwież"}
             </button>
+
+            <div className="right" ref={menuRef}>
+              <button
+                type="button"
+                className="account-btn"
+                onClick={() => setOpen((v) => !v)}
+                aria-label="Menu konta"
+              >
+                <span className="avatar">👤</span>
+              </button>
+
+              {open && (
+                <div className="dropdown">
+                  {user ? (
+                    <>
+                      <div className="dropdown-head">
+                        Zalogowano jako
+                        <div className="dropdown-email">{user.email || "Użytkownik"}</div>
+                      </div>
+
+                      <button
+                        className="dropdown-item"
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          setPanel("profile");
+                        }}
+                      >
+                        Moje dane
+                      </button>
+
+                      <button
+                        className="dropdown-item"
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          setPanel("reservations");
+                        }}
+                      >
+                        Moje rezerwacje
+                      </button>
+
+                      <button
+                        className="dropdown-item"
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          nav("/search");
+                        }}
+                      >
+                        Nowa rezerwacja
+                      </button>
+
+                      <div className="dropdown-sep" />
+
+                      <button
+                        className="dropdown-item danger"
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          signOut();
+                          nav("/login");
+                        }}
+                      >
+                        Wyloguj
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="dropdown-head">Nie jesteś zalogowana</div>
+                      <button
+                        className="dropdown-item"
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          nav("/login");
+                        }}
+                      >
+                        Zaloguj
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <section className="guest-section">
-          <div className="section-head">
-            <h2 className="section-title">Moje rezerwacje</h2>
-            {usedEndpoint && (
-              <span className="section-hint">
-                Źródło: <b>{usedEndpoint}</b>
-              </span>
-            )}
-          </div>
+        {/* mini zakładki (opcjonalne, ale ładne) */}
+        <div className="panel-tabs">
+          <button
+            type="button"
+            className={`tab-btn ${panel === "reservations" ? "active" : ""}`}
+            onClick={() => setPanel("reservations")}
+          >
+            Rezerwacje
+          </button>
+          <button
+            type="button"
+            className={`tab-btn ${panel === "profile" ? "active" : ""}`}
+            onClick={() => setPanel("profile")}
+          >
+            Moje dane
+          </button>
+        </div>
 
-          {err && <div className="error">{err}</div>}
-          {loading && <div className="info">Ładowanie rezerwacji...</div>}
-
-          {!loading && !err && reservations.length === 0 && (
-            <div className="placeholder">Nie masz jeszcze żadnych rezerwacji.</div>
-          )}
-
-          {!loading && !err && reservations.length > 0 && (
-            <div className="reserv-grid">
-              {reservations.map((r, idx) => {
-                const meta = prettyReservation(r);
-                const key = meta.id !== "?" ? String(meta.id) : `row-${idx}`;
-                const isOpen = openId === key;
-
-                return (
-                  <div key={key} className={`reserv-item ${isOpen ? "is-open" : ""}`}>
-                    <div className="reserv-top">
-                      <div className="reserv-title">
-                        <b>{meta.hotelLabel}</b>
-                        {meta.status ? <span className="pill">{String(meta.status)}</span> : null}
-                      </div>
-
-                      <div className="reserv-price">
-                        {meta.price !== "" ? <b>{String(meta.price)} PLN</b> : <span className="muted">—</span>}
-                      </div>
-                    </div>
-
-                    <div className="reserv-meta">
-                      <span>
-                        <span className="muted">Od:</span> <b>{meta.from || "—"}</b>
-                      </span>
-                      <span>
-                        <span className="muted">Do:</span> <b>{meta.to || "—"}</b>
-                      </span>
-                      <span>
-                        <span className="muted">Osób:</span> <b>{meta.guests || "—"}</b>
-                      </span>
-                      <span>
-                        <span className="muted">ID:</span> <b>{String(meta.id)}</b>
-                      </span>
-                    </div>
-
-                    <div className="reserv-bottom">
-                      <button
-                        type="button"
-                        className="btn-small"
-                        onClick={() => setOpenId((v) => (v === key ? null : key))}
-                      >
-                        {isOpen ? "Ukryj szczegóły" : "Pokaż szczegóły"}
-                      </button>
-                    </div>
-
-                    {isOpen && <pre className="reserv-json">{JSON.stringify(r, null, 2)}</pre>}
-                  </div>
-                );
-              })}
+        {panel === "reservations" ? (
+          <section className="guest-section">
+            <div className="section-head">
+              <h2 className="section-title">Moje rezerwacje</h2>
             </div>
-          )}
-        </section>
+
+            {err && <div className="error">{err}</div>}
+            {loading && <div className="info">Ładowanie rezerwacji...</div>}
+
+            {!loading && !err && reservations.length === 0 && (
+              <div className="placeholder">Nie masz jeszcze żadnych rezerwacji.</div>
+            )}
+
+            {!loading && !err && reservations.length > 0 && (
+              <div className="reserv-grid">
+                {reservations.map((r, idx) => {
+                  const meta = prettyReservation(r);
+                  const key = meta.id !== "?" ? String(meta.id) : `row-${idx}`;
+
+                  return (
+                    <div key={key} className="reserv-item">
+                      <div className="reserv-top">
+                        <div className="reserv-title">
+                          <b>{meta.hotelLabel}</b>
+                          {meta.status ? <span className="pill">{String(meta.status)}</span> : null}
+                        </div>
+
+                        <div className="reserv-price">
+                          {meta.price !== "" ? <b>{String(meta.price)} PLN</b> : <span className="muted">—</span>}
+                        </div>
+                      </div>
+
+                      <div className="reserv-meta">
+                        <span>
+                          <span className="muted">Od:</span> <b>{meta.from || "—"}</b>
+                        </span>
+                        <span>
+                          <span className="muted">Do:</span> <b>{meta.to || "—"}</b>
+                        </span>
+                        <span>
+                          <span className="muted">Liczba osób:</span> <b>{meta.guests || "—"}</b>
+                        </span>
+                      </div>
+
+                      <div className="reserv-bottom">
+                        <button type="button" className="btn-small" onClick={() => setDetails(r)}>
+                          Szczegóły
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        ) : (
+          <section className="guest-section">
+            <div className="section-head">
+              <h2 className="section-title">Moje dane</h2>
+            </div>
+
+            {profileErr && <div className="error">{profileErr}</div>}
+            {profileLoading && <div className="info">Ładowanie danych profilu...</div>}
+
+            {!profileLoading && (
+              <div className="data-grid">
+                <div className="data-list">
+                  <div className="data-row">
+                    <span className="data-label">Imię</span>
+                    <b className="data-value">{guestProfile?.firstName || "—"}</b>
+                  </div>
+
+                  <div className="data-row">
+                    <span className="data-label">Nazwisko</span>
+                    <b className="data-value">{guestProfile?.lastName || "—"}</b>
+                  </div>
+
+                  <div className="data-row">
+                    <span className="data-label">Numer dokumentu</span>
+                    <b className="data-value">{guestProfile?.documentNumber || "—"}</b>
+                  </div>
+
+                  <div className="section-title">Dane kontaktowe:</div>
+
+                  <div className="data-row">
+                    <span className="data-label">Email:</span>
+                    <b className="data-value">{user?.email || "—"}</b>
+                  </div>
+
+                  <div className="data-row">
+                    <span className="data-label">Telefon:</span>
+                    <b className="data-value">{guestProfile?.phoneNumber || "—"}</b>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
       </div>
+
+      {details && (
+        <ReservationDetailsModal
+          reservation={details}
+          hotels={hotels}
+          onClose={() => setDetails(null)}
+          onCancel={(r) => {
+            setCancelErr("");
+            setConfirmCancel(r);
+          }}
+        />
+      )}
+
+      {confirmCancel && (
+        <ConfirmCancelModal
+          reservation={confirmCancel}
+          onClose={() => {
+            if (!canceling) setConfirmCancel(null);
+          }}
+          onConfirm={doCancelConfirmed}
+          loading={canceling}
+          error={cancelErr}
+        />
+      )}
     </main>
   );
 }

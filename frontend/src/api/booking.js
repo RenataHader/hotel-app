@@ -21,3 +21,17 @@ export async function getMyReservations() {
   });
   return Array.isArray(data) ? data : [];
 }
+
+export async function getGuests() {
+  const { data } = await http.get("/booking/guests", {
+    headers: { Accept: "application/json" },
+  });
+  return Array.isArray(data) ? data : [];
+}
+
+export async function cancelReservation(id) {
+  const { data } = await http.patch(`/booking/api/reservations/${id}/cancel`, null, {
+    headers: { Accept: "application/json" },
+  });
+  return data;
+}

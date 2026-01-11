@@ -19,6 +19,9 @@ export default function App() {
         <Routes>
           {/* BEZ TopBara */}
           <Route path="/" element={<HotelSelectPage />} />
+          <Route element={<ProtectedRoute />}>
+              <Route path="/guest" element={<GuestHome />} />
+          </Route>
 
           {/* Z TopBarem */}
           <Route element={<AppLayout />}>
@@ -27,10 +30,6 @@ export default function App() {
 
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterGuestPage />} />
-
-            <Route element={<ProtectedRoute />}>
-              <Route path="/guest" element={<GuestHome />} />
-            </Route>
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

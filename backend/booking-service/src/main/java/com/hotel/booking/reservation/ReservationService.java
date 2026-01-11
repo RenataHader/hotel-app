@@ -2,8 +2,11 @@ package com.hotel.booking.reservation;
 
 import com.hotel.booking.guest.Guest;
 import com.hotel.booking.guest.GuestRepository;
+import com.hotel.booking.payment.Payment;
+import com.hotel.booking.payment.PaymentRepository;
 import com.hotel.security.JwtUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -23,6 +27,7 @@ public class ReservationService {
     private final ReservationRepository reservationRepo;
     private final GuestRepository guestRepo;
     private final CatalogClient catalogClient;
+    private final PaymentRepository paymentRepo;
 
     public List<ReservationResponse> getAllReservations() {
         return reservationRepo.findAll().stream().map(this::mapToResponse).toList();
@@ -50,8 +55,7 @@ public class ReservationService {
         if (user.guestId() == null) throw new IllegalArgumentException("Użytkownik nie jest gościem");
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "checkInDate"));
-        return reservationRepo.findAllByGuest_Id(user.guestId(), pageable)
-                .map(this::mapToResponse);
+        return reservationRepo.findAllByGuest_Id(user.guestId(), pageable).map(this::mapToResponse);
     }
 
     public Page<ReservationResponse> getHotelReservationsPage(int page, int size) {
@@ -59,8 +63,7 @@ public class ReservationService {
         if (user.hotelId() == null) throw new IllegalArgumentException("Endpoint dla personelu");
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "checkInDate"));
-        return reservationRepo.findAllByHotelId(user.hotelId(), pageable)
-                .map(this::mapToResponse);
+        return reservationRepo.findAllByHotelId(user.hotelId(), pageable).map(this::mapToResponse);
     }
 
     public ReservationQuoteResponse quote(ReservationRequest request) {
@@ -153,14 +156,11 @@ public class ReservationService {
                 .rooms(pricing.rooms())
                 .guestCount(request.getGuestCount())
                 .totalBeds(pricing.totalBeds())
-
                 .mealType(mealType)
                 .mealPricePerPerson(mealPricePerPerson)
                 .mealTotal(money(mealTotal))
-
                 .services(servicesOut)
                 .servicesTotal(money(servicesTotal))
-
                 .roomsTotal(roomsTotal)
                 .total(total)
                 .build();
@@ -218,10 +218,39 @@ public class ReservationService {
         reservation.setRoomIds(new ArrayList<>(rooms.stream().map(ReservedRoomResponse::getRoomId).toList()));
 
         reservation.setRoomType(computeRoomType(rooms));
-
         reservation.setStatus(ReservationStatus.CONFIRMED);
 
-        return mapToResponse(reservationRepo.save(reservation));
+        Reservation saved = reservationRepo.save(reservation);
+
+        createInitialPaymentIfMissing(saved);
+
+        return mapToResponse(saved);
+    }
+
+    private void createInitialPaymentIfMissing(Reservation saved) {
+        if (saved == null || saved.getId() == null) {
+            throw new IllegalArgumentException("Nie udało się utworzyć rezerwacji (brak ID).");
+        }
+
+        if (paymentRepo.findByReservation_Id(saved.getId()).isPresent()) {
+            return;
+        }
+
+        try {
+            Payment payment = Payment.builder()
+                    .reservation(saved)
+                    .amount(saved.getPrice())
+                    .paymentDate(LocalDateTime.now())
+                    .paymentMethod("ONLINE")
+                    .status("PENDING")
+                    .build();
+
+            paymentRepo.save(payment);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("Nie udało się utworzyć płatności (błąd bazy / constraint).");
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Nie udało się utworzyć płatności: " + e.getMessage());
+        }
     }
 
     @Transactional
@@ -258,6 +287,11 @@ public class ReservationService {
 
         reservation.setStatus(ReservationStatus.CANCELLED);
         reservationRepo.save(reservation);
+
+        paymentRepo.findByReservation_Id(id).ifPresent(p -> {
+            p.setStatus("CANCELLED");
+            paymentRepo.save(p);
+        });
     }
 
     @Transactional
@@ -443,9 +477,8 @@ public class ReservationService {
 
         try {
             List<Integer> ids = (r.getRoomIds() == null) ? new ArrayList<>() : new ArrayList<>(r.getRoomIds());
-            if (ids.isEmpty() && r.getRoomId() != null) {
-                ids = List.of(r.getRoomId());
-            }
+            if (ids.isEmpty() && r.getRoomId() != null) ids = List.of(r.getRoomId());
+
             rooms = ids.stream()
                     .map(catalogClient::getRoom)
                     .filter(Objects::nonNull)
@@ -461,9 +494,8 @@ public class ReservationService {
             totalBeds = rooms.stream().mapToInt(rr -> safeInt(rr.getNumberOfBeds())).sum();
         } catch (Exception e) {
             List<Integer> ids = (r.getRoomIds() == null) ? new ArrayList<>() : new ArrayList<>(r.getRoomIds());
-            if (ids.isEmpty() && r.getRoomId() != null) {
-                ids = List.of(r.getRoomId());
-            }
+            if (ids.isEmpty() && r.getRoomId() != null) ids = List.of(r.getRoomId());
+
             rooms = ids.stream()
                     .filter(Objects::nonNull)
                     .map(id -> ReservedRoomResponse.builder().roomId(id).build())

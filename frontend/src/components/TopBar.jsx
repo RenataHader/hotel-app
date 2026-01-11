@@ -1,7 +1,26 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import "./TopBar.css";
+
+function isoToday() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function addDaysIso(iso, days) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + days);
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 export default function TopBar({
   hotels = [],
@@ -15,6 +34,8 @@ export default function TopBar({
   const nav = useNavigate();
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
+
+  const today = useMemo(() => isoToday(), []);
 
   useEffect(() => {
     function onDocClick(e) {
@@ -33,11 +54,11 @@ export default function TopBar({
             className="brand"
             onClick={() => nav("/search")}
             onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") nav("/search");
-              }}
-              role="button"
-              tabIndex={0}
-              >
+              if (e.key === "Enter" || e.key === " ") nav("/search");
+            }}
+            role="button"
+            tabIndex={0}
+          >
             <div className="brand-dot" />
             <span>Hotel Booking</span>
           </div>
@@ -64,7 +85,21 @@ export default function TopBar({
               className="mini-input"
               type="date"
               value={search.from}
-              onChange={(e) => setSearch((s) => ({ ...s, from: e.target.value }))}
+              min={today} //nie pozwala wybrać przeszłości
+              onChange={(e) => {
+                const v = e.target.value;
+
+                setSearch((s) => {
+                  const next = { ...s, from: v };
+
+                  // jeśli "Do" jest wcześniejsze niż nowe "Od" -> podbij "Do"
+                  if (next.to && v && next.to < v) {
+                    next.to = v;
+                  }
+
+                  return next;
+                });
+              }}
               required
             />
           </label>
@@ -75,6 +110,7 @@ export default function TopBar({
               className="mini-input"
               type="date"
               value={search.to}
+              min={search.from ? addDaysIso(search.from, 1) : addDaysIso(today, 1)}
               onChange={(e) => setSearch((s) => ({ ...s, to: e.target.value }))}
               required
             />
@@ -114,30 +150,42 @@ export default function TopBar({
                 <>
                   <div className="dropdown-head">
                     Zalogowano jako
-                    <div className="dropdown-email">{user.email}</div>
+                    <div className="dropdown-email">{user.email || user.name || "Użytkownik"}</div>
                   </div>
 
                   <button
-                    className="dropdown-item"
-                    type="button"
-                    onClick={() => {
-                      setOpen(false);
-                      nav("/guest");
-                    }}
-                  >
-                    Moje dane
-                  </button>
+                        className="dropdown-item"
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          nav("/guest");
+                        }}
+                      >
+                        Moje dane
+                      </button>
 
-                  <button
-                    className="dropdown-item"
-                    type="button"
-                    onClick={() => {
-                      setOpen(false);
-                      nav("/guest");
-                    }}
-                  >
-                    Moje rezerwacje (później)
-                  </button>
+                      <button
+                        className="dropdown-item"
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          // jesteś już tutaj, ale zostawiam celowo
+                          nav("/guest");
+                        }}
+                      >
+                        Moje rezerwacje
+                      </button>
+
+                      <button
+                        className="dropdown-item"
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          nav("/search");
+                        }}
+                      >
+                        Nowa rezerwacja
+                      </button>
 
                   <div className="dropdown-sep" />
 

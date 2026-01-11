@@ -18,7 +18,7 @@ public class Payment {
     private Integer id;
 
     @OneToOne
-    @JoinColumn(name = "nr_rezerwacji", nullable = false)
+    @JoinColumn(name = "nr_rezerwacji", nullable = false, unique = true)
     private Reservation reservation;
 
     @Column(name = "kwota", nullable = false)
