@@ -8,6 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -78,7 +80,7 @@ public class AuthService {
     @Transactional
     public AuthResponse registerGuest(RegisterGuestRequest req) {
         if (repo.existsByEmail(req.email())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists");
         }
 
         Integer guestId = bookingClient.createGuest(
