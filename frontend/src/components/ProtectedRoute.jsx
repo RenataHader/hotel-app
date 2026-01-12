@@ -8,7 +8,7 @@ export default function ProtectedRoute() {
   if (loading) return <div style={{ padding: 24 }}>Ładowanie...</div>;
 
   if (!token) {
-    const next = encodeURIComponent(`${loc.pathname}${loc.search}${loc.hash}`);
+    const next = encodeURIComponent(loc.pathname + loc.search);
     return <Navigate to={`/login?next=${next}`} replace />;
   }
 

@@ -1,5 +1,3 @@
-// src/utils/buildRoomOffers.js
-
 function num(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -15,7 +13,6 @@ function canTake(group, qty) {
 }
 
 function buildOffer(parts, guestCount) {
-  // parts: [{ group, qty }]
   let totalBeds = 0;
   let totalPrice = 0;
   let roomsCount = 0;
@@ -32,10 +29,8 @@ function buildOffer(parts, guestCount) {
     totalBeds += bedsOf(g) * qty;
     totalPrice += num(g.price) * qty;
 
-    // bierzemy konkretne realne pokoje (ID) do pakietu
     roomIds.push(...(g.roomIds || []).slice(0, qty));
 
-    // ile takich pakietów można ułożyć z dostępnych sztuk
     availability = Math.min(availability, Math.floor((g.count || 0) / qty));
 
     const type = g.type || "Pokój";
@@ -70,19 +65,14 @@ function buildOffer(parts, guestCount) {
   };
 }
 
-/**
- * Buduje oferty spełniające guestCount:
- * - 1 pokój
- * - 2 pokoje
- * - 3 pokoje
- */
+
 export function buildRoomOffers(groups, guestCount, limit = 30) {
   const g = (groups || []).filter((x) => bedsOf(x) > 0 && (x.roomIds?.length ?? 0) > 0);
 
   const offers = [];
   const seen = new Set();
 
-  // 1 pokój
+
   for (let i = 0; i < g.length; i++) {
     const a = g[i];
     if (!canTake(a, 1)) continue;
@@ -93,13 +83,13 @@ export function buildRoomOffers(groups, guestCount, limit = 30) {
     }
   }
 
-  // 2 pokoje
+
   for (let i = 0; i < g.length; i++) {
     const a = g[i];
     for (let j = i; j < g.length; j++) {
       const b = g[j];
 
-      // ile sztuk potrzeba z danej grupy
+
       const needA = i === j ? 2 : 1;
       const needB = 1;
 
@@ -127,7 +117,7 @@ export function buildRoomOffers(groups, guestCount, limit = 30) {
     }
   }
 
-  // 3 pokoje
+
   for (let i = 0; i < g.length; i++) {
     for (let j = i; j < g.length; j++) {
       for (let k = j; k < g.length; k++) {
@@ -135,13 +125,13 @@ export function buildRoomOffers(groups, guestCount, limit = 30) {
           b = g[j],
           c = g[k];
 
-        // liczymy ile sztuk z każdej grupy potrzeba
+
         const counts = new Map();
         counts.set(a.key, (counts.get(a.key) || 0) + 1);
         counts.set(b.key, (counts.get(b.key) || 0) + 1);
         counts.set(c.key, (counts.get(c.key) || 0) + 1);
 
-        // sprawdzamy dostępność ilościową
+
         let ok = true;
         for (const [key, qty] of counts.entries()) {
           const group = g.find((x) => x.key === key);
@@ -152,7 +142,7 @@ export function buildRoomOffers(groups, guestCount, limit = 30) {
         }
         if (!ok) continue;
 
-        // budujemy parts z qty
+
         const parts = [];
         for (const [key, qty] of counts.entries()) {
           const group = g.find((x) => x.key === key);
@@ -168,12 +158,10 @@ export function buildRoomOffers(groups, guestCount, limit = 30) {
     }
   }
 
-  // sort: najtańsze, potem mniej pokoi
   offers.sort((x, y) => {
     if (x.totalPricePerNight !== y.totalPricePerNight) return x.totalPricePerNight - y.totalPricePerNight;
     return x.roomsCount - y.roomsCount;
   });
 
-  // wycinamy tylko sensowną liczbę
   return offers.slice(0, limit);
 }

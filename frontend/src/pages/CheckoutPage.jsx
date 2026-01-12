@@ -24,39 +24,37 @@ function norm(s) {
   return String(s ?? "").trim().toLowerCase();
 }
 
-// jeśli masz starą selekcję z mealType, mapujemy ją na mealId
+
 function resolveMealId(prevMealId, selectionMealType, meals) {
   const arr = Array.isArray(meals) ? meals : [];
   if (arr.length === 0) return prevMealId ?? null;
 
-  // 1) jeśli prevMealId istnieje i jest w liście
+
   if (prevMealId != null) {
     const id = Number(prevMealId);
     if (Number.isFinite(id) && arr.some((m) => Number(m?.id) === id)) return id;
   }
 
-  // 2) jeśli w selection było mealType (stare LS) -> dopasuj po typie
+
   if (selectionMealType) {
     const found = arr.find((m) => norm(m?.type) === norm(selectionMealType));
     if (found?.id != null) return Number(found.id);
   }
 
-  // 3) preferuj "Brak"
+
   const brak = arr.find((m) => norm(m?.type) === "brak");
   if (brak?.id != null) return Number(brak.id);
 
-  // 4) fallback: pierwsza pozycja
+
   return arr[0]?.id != null ? Number(arr[0].id) : null;
 }
 
 function toPriceString2(v) {
   if (v === null || v === undefined || v === "") return undefined;
   if (typeof v === "number") return v.toFixed(2);
-  // backend często zwraca string "123.45" — zostawiamy
   const s = String(v).trim();
   if (!s) return undefined;
 
-  // jeśli ktoś ma "123" -> "123.00"
   const n = Number(s);
   if (Number.isFinite(n)) return n.toFixed(2);
   return s;
@@ -128,7 +126,6 @@ export default function CheckoutPage() {
         setMeals(mealsArr);
         setServices(servicesArr);
 
-        // ustaw mealId sensownie (w tym migracja ze starego mealType)
         setMealId((prev) => resolveMealId(prev, selection?.mealType, mealsArr));
       } catch (e) {
         if (!alive) return;
@@ -183,7 +180,6 @@ export default function CheckoutPage() {
       checkInDate: selection.checkInDate,
       checkOutDate: selection.checkOutDate,
 
-      // ważne: jako string 2 miejsca (żeby uniknąć float->BigDecimal konfliktów)
       clientPrice: clientPrice != null ? toPriceString2(clientPrice) : undefined,
     };
   }

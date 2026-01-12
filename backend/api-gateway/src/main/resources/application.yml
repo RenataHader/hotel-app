@@ -28,7 +28,6 @@ spring:
               - "*"
             allowCredentials: true
 
-      # Route'y - czyli mapowanie ścieżek na konkretne mikroserwisy
       routes:
         - id: booking-service
           uri: http://booking-service:8081

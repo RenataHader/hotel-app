@@ -117,7 +117,6 @@ function ReservationDetailsModal({ reservation, hotels, onClose, onCancel }) {
   const services = Array.isArray(reservation?.services) ? reservation.services : [];
   const rooms = Array.isArray(reservation?.rooms) ? reservation.rooms : [];
 
-  // Minimalna walidacja możliwości anulowania (frontend)
   const canCancelByStatus = !["CANCELLED", "CHECKED_IN", "CHECKED_OUT"].includes(statusUpper);
 
   const checkIn = parseISOToUTC(from);
@@ -322,7 +321,7 @@ export default function GuestHome() {
   const { user, signOut } = useAuth();
   const nav = useNavigate();
 
-  const [panel, setPanel] = useState("reservations"); // "reservations" | "profile"
+  const [panel, setPanel] = useState("reservations");
 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -345,7 +344,6 @@ export default function GuestHome() {
 
   useEffect(() => {
     if (!user) nav("/login");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useEffect(() => {
@@ -434,7 +432,7 @@ export default function GuestHome() {
       loadHotels();
       loadGuestProfile();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [user]);
 
   const prettyReservation = useMemo(() => {
@@ -608,24 +606,6 @@ export default function GuestHome() {
               )}
             </div>
           </div>
-        </div>
-
-        {/* mini zakładki (opcjonalne, ale ładne) */}
-        <div className="panel-tabs">
-          <button
-            type="button"
-            className={`tab-btn ${panel === "reservations" ? "active" : ""}`}
-            onClick={() => setPanel("reservations")}
-          >
-            Rezerwacje
-          </button>
-          <button
-            type="button"
-            className={`tab-btn ${panel === "profile" ? "active" : ""}`}
-            onClick={() => setPanel("profile")}
-          >
-            Moje dane
-          </button>
         </div>
 
         {panel === "reservations" ? (

@@ -15,23 +15,23 @@ export default function RegisterGuestPage() {
     documentNumber: "",
   });
 
-  // ogólny błąd (np. serwer, konflikt, itp.)
+
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
 
-  // błędy per pole z backendu: { email: "...", password: "..." }
+
   const [fieldErrors, setFieldErrors] = useState({});
 
   function setField(name, value) {
     setForm((f) => ({ ...f, [name]: value }));
 
-    // czyść błąd tylko dla tego pola
+
     setFieldErrors((prev) => {
       if (!prev || !prev[name]) return prev;
       return { ...prev, [name]: undefined };
     });
 
-    // czyść ogólny komunikat przy edycji
+
     if (err) setErr("");
     if (ok) setOk("");
   }
@@ -49,14 +49,14 @@ export default function RegisterGuestPage() {
     } catch (e2) {
       console.error(e2);
 
-      // ✅ walidacja z backendu (Twoje: { fields: { ... } })
+
       const fields = e2?.response?.data?.fields;
       if (fields && typeof fields === "object") {
         setFieldErrors(fields);
         return;
       }
 
-      // fallback: inne błędy (np. 409 email zajęty, 500, itd.)
+
       const msg =
         e2?.response?.data?.message ||
         e2?.response?.data?.error ||
@@ -164,7 +164,7 @@ export default function RegisterGuestPage() {
             {fieldErrors.documentNumber && <div className="field-error">{fieldErrors.documentNumber}</div>}
           </div>
 
-          {/* ogólne komunikaty (nie walidacja pól) */}
+
           {err && <div className="error">{err}</div>}
           {ok && <div className="success">{ok}</div>}
 

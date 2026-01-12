@@ -1,5 +1,3 @@
-// src/utils/groupRooms.js
-
 function pick(obj, keys, fallback = null) {
   for (const k of keys) {
     if (obj && obj[k] !== undefined && obj[k] !== null && obj[k] !== "") return obj[k];
@@ -13,10 +11,7 @@ function toNumberMaybe(v) {
   return Number.isFinite(n) ? n : NaN;
 }
 
-/**
- * Grupy: hotelId + type + numberOfBeds + pricePerNight
- * Zwraca: [{ key, hotelId, type, beds, price, count, roomIds, sampleRoomNumbers }]
- */
+
 export function groupRooms(rooms) {
   const map = new Map();
 

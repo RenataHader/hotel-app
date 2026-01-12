@@ -7,10 +7,7 @@ import java.util.List;
 
 @ConfigurationProperties(prefix = "app.security")
 public class SecurityPathsProperties {
-    /**
-     * Endpointy dostępne bez JWT, np:
-     * /auth/**,/actuator/**,/swagger-ui/**,/v3/api-docs/**
-     */
+
     private List<String> permitAll = new ArrayList<>();
 
     public List<String> getPermitAll() { return permitAll; }

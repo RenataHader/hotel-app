@@ -1,4 +1,3 @@
-// src/api/booking.js
 import http from "./http";
 
 export async function quoteReservation(payload) {
@@ -22,6 +21,20 @@ export async function getMyReservations() {
   return Array.isArray(data) ? data : [];
 }
 
+export async function getHotelReservations() {
+  const { data } = await http.get("/booking/api/reservations/hotel", {
+    headers: { Accept: "application/json" },
+  });
+  return Array.isArray(data) ? data : [];
+}
+
+export async function getAllReservations() {
+  const { data } = await http.get("/booking/api/reservations", {
+    headers: { Accept: "application/json" },
+  });
+  return Array.isArray(data) ? data : [];
+}
+
 export async function getGuests() {
   const { data } = await http.get("/booking/guests", {
     headers: { Accept: "application/json" },
@@ -30,8 +43,7 @@ export async function getGuests() {
 }
 
 export async function cancelReservation(id) {
-  const { data } = await http.patch(`/booking/api/reservations/${id}/cancel`, null, {
+  await http.patch(`/booking/api/reservations/${id}/cancel`, null, {
     headers: { Accept: "application/json" },
   });
-  return data;
 }

@@ -11,7 +11,6 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* wysokość paska – do wyliczeń dla auth pod topbarem */
   --topbar-space: 110px;
 }
 
@@ -28,10 +27,9 @@ html, body, #root {
 body {
   min-width: 320px;
   min-height: 100vh;
-  background: #0b1020; /* fallback */
+  background: #0b1020;
 }
 
-/* linki */
 a {
   font-weight: 600;
   color: #a5b4fc;
@@ -41,7 +39,6 @@ a:hover {
   text-decoration: underline;
 }
 
-/* baza button */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -57,7 +54,7 @@ button:hover { border-color: #646cff; }
 button:focus,
 button:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
 
-/* ===== TŁO NA CAŁĄ APLIKACJĘ ===== */
+
 .app-bg {
   position: fixed;
   inset: 0;
@@ -69,11 +66,11 @@ button:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
   position: absolute;
   inset: 0;
 
-  background-size: cover;          
-  background-position: center;     
+  background-size: cover;
+  background-position: center;
   background-repeat: no-repeat;
 
-  /* delikatny “filmowy” zoom */
+
   transform: scale(1.02);
   opacity: 0;
 
@@ -86,7 +83,7 @@ button:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
   transform: scale(1.00);
 }
 
-/* przyciemnienie tła, żeby UI było czytelne */
+
 .app-bg::after {
   content: "";
   position: absolute;
@@ -94,23 +91,20 @@ button:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
   background: rgba(0, 0, 0, 0.38);
 }
 
-/* wszystko nad tłem */
+
 .app-shell {
   position: relative;
   z-index: 1;
   min-height: 100vh;
 }
 
-/* auth strony pod topbarem:
-   1) niech zajmują “resztę ekranu”
-   2) niech nie wchodzą pod pasek
-*/
+
 .with-topbar .auth-page {
   min-height: calc(100vh - var(--topbar-space));
   padding-top: 10px;
 }
 
-/* jasny motyw */
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;

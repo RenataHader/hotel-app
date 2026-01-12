@@ -85,14 +85,13 @@ export default function TopBar({
               className="mini-input"
               type="date"
               value={search.from}
-              min={today} //nie pozwala wybrać przeszłości
+              min={today}
               onChange={(e) => {
                 const v = e.target.value;
 
                 setSearch((s) => {
                   const next = { ...s, from: v };
 
-                  // jeśli "Do" jest wcześniejsze niż nowe "Od" -> podbij "Do"
                   if (next.to && v && next.to < v) {
                     next.to = v;
                   }
@@ -169,7 +168,6 @@ export default function TopBar({
                         type="button"
                         onClick={() => {
                           setOpen(false);
-                          // jesteś już tutaj, ale zostawiam celowo
                           nav("/guest");
                         }}
                       >

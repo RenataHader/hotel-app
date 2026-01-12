@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { homeByRole, isNextAllowed, normalizeRole } from "../utils/role";
 import "./LoginPage.css";
 
 export default function LoginPage() {
@@ -8,7 +9,7 @@ export default function LoginPage() {
   const nav = useNavigate();
   const [params] = useSearchParams();
 
-  const next = params.get("next"); // np. "/guest"
+  const next = params.get("next");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
@@ -22,15 +23,19 @@ export default function LoginPage() {
     try {
       const u = await signIn(email, password);
 
-      // 1) jeśli mamy next → wracamy tam
-      if (next) {
+
+      console.log("USER FROM signIn:", u);
+
+      const role = normalizeRole(u?.role);
+
+
+      if (next && isNextAllowed(next, role)) {
         nav(next);
         return;
       }
 
-      // 2) fallback (jak nie ma next)
-      if (u?.role === "GUEST") nav("/guest");
-      else nav("/guest");
+
+      nav(homeByRole(role));
     } catch (e2) {
       console.error(e2);
       const msg =

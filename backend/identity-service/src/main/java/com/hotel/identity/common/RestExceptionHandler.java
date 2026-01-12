@@ -13,8 +13,6 @@ public class RestExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
 
-        // U Ciebie ten wyjątek jest dla: "Email already exists"
-        // więc mapujemy to jako konflikt
         if (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("email")) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", ex.getMessage()));

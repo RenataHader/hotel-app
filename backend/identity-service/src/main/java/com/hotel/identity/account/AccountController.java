@@ -15,7 +15,6 @@ public class AccountController {
 
     @GetMapping("/me")
     public AccountResponse me(Authentication auth) {
-        // auth.getName() == email (subject z JWT)
         return service.getByEmail(auth.getName());
     }
 }

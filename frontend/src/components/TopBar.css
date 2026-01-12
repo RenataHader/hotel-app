@@ -17,7 +17,6 @@
   padding: 12px 14px;
   border-radius: 18px;
 
-  /* czyste "glass" */
   background: rgba(12, 18, 32, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
@@ -26,7 +25,6 @@
   -webkit-backdrop-filter: blur(20px);
 }
 
-/* --- lewa strona --- */
 .left {
   display: flex;
   align-items: center;
@@ -67,7 +65,6 @@
   white-space: nowrap;
 }
 
-/* --- search --- */
 .search {
   display: flex;
   align-items: flex-end;
@@ -119,7 +116,6 @@
   transform: translateY(-1px);
 }
 
-/* --- konto --- */
 .right {
   position: relative;
 }
@@ -136,7 +132,6 @@
   font-size: 18px;
 }
 
-/* dropdown */
 .dropdown {
   position: absolute;
   right: 0;

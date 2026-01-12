@@ -31,7 +31,6 @@ http.interceptors.response.use(
       const hadAuthHeader = Boolean(err?.config?.headers?.Authorization);
       const token = localStorage.getItem("token");
 
-      // nie psujemy loginu, jeśli ktoś podał złe hasło (brak tokena)
       if (hadAuthHeader || token) {
         localStorage.removeItem("token");
         broadcastLogout();

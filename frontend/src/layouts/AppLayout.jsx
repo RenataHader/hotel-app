@@ -141,7 +141,6 @@ export default function AppLayout() {
     setRoomsError("");
     setRoomsLoading(true);
 
-    // WAŻNE: zawsze pokazujemy ekran wyników, też z login/register
     nav("/search");
 
     try {

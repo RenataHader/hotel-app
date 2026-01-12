@@ -67,7 +67,7 @@ public class AuthService {
     private void validateXor(Integer employeeId, Integer guestId) {
         boolean e = employeeId != null;
         boolean g = guestId != null;
-        if (e == g) { // oba true albo oba false
+        if (e == g) {
             throw new IllegalArgumentException("Exactly one of employeeId or guestId must be provided");
         }
     }

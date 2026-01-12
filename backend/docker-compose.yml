@@ -93,9 +93,6 @@ services:
       APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
       APP_JWT_EXPIRATION_MS: "3600000"
       APP_SECURITY_PERMIT_ALL_0: "/**"
-#      # ważne: pewne wstrzyknięcie permitAll (camelCase)
-#      SPRING_APPLICATION_JSON: >
-#        {"app":{"security":{"permitAll":["/actuator/**","/public/**","/api/reservations/reserved-ids","/api/reservations/quote"]}}}
 
       APP_SERVICES_CATALOG_BASE_URL: "http://catalog-service:8082"
     depends_on:
@@ -126,9 +123,6 @@ services:
       APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
       APP_JWT_EXPIRATION_MS: "3600000"
       APP_SECURITY_PERMIT_ALL_0: "/**"
-#      # ważne: to naprawia 403 na /catering/by-type przy wywołaniu z booking-service
-#      SPRING_APPLICATION_JSON: >
-#        {"app":{"security":{"permitAll":["/actuator/**","/hotels/**","/api/rooms/**","/catering/**","/services/**"]}}}
 
       APP_SERVICES_BOOKING_BASE_URL: "http://booking-service:8081"
     depends_on:
@@ -159,9 +153,6 @@ services:
       APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
       APP_JWT_EXPIRATION_MS: "3600000"
       APP_SECURITY_PERMIT_ALL_0: "/**"
-#      # auth ma być publiczny
-#      SPRING_APPLICATION_JSON: >
-#        {"app":{"security":{"permitAll":["/auth/**","/actuator/**"]}}}
 
       APP_OPERATIONS_URL: "http://operations-service:8084"
       APP_BOOKING_URL: "http://booking-service:8081"
@@ -193,9 +184,6 @@ services:
       APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
       APP_JWT_EXPIRATION_MS: "3600000"
       APP_SECURITY_PERMIT_ALL_0: "/**"
-#      # employees publiczne (tak jak miałaś)
-#      SPRING_APPLICATION_JSON: >
-#        {"app":{"security":{"permitAll":["/actuator/**","/employees/**"]}}}
 
       APP_SERVICES_BOOKING_BASE_URL: "http://booking-service:8081"
     depends_on:

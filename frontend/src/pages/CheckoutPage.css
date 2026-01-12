@@ -1,5 +1,3 @@
-/* src/pages/CheckoutPage.css */
-
 .checkout-main {
   padding: 24px 16px;
   display: flex;
@@ -47,7 +45,6 @@
   opacity: 0.9;
 }
 
-/* układ: zawsze 1 kolumna */
 .grid {
   display: grid;
   gap: 12px;
@@ -66,7 +63,6 @@
   font-size: 18px;
 }
 
-/* listy usług */
 .checks {
   display: grid;
   gap: 10px;
@@ -78,7 +74,6 @@
   align-items: center;
 }
 
-/* przyciski (góra) */
 .actions {
   margin-top: 12px;
   display: flex;
@@ -88,7 +83,6 @@
   justify-content: center;
 }
 
-/* PODSUMOWANIE (QUOTE) */
 .quote {
   margin-top: 12px;
   padding: 12px;
@@ -132,7 +126,6 @@
   gap: 8px;
 }
 
-/* logowanie/rejestracja */
 .quote-actions-row {
   display: flex;
   gap: 10px;
@@ -140,7 +133,6 @@
   justify-content: center;
 }
 
-/* UJEDNOLICONE: szerokość + centrowanie + font przycisków */
 .actions > .search-btn,
 .quote-actions > .search-btn,
 .quote-actions-row > .btn-ghost {
@@ -152,7 +144,6 @@
   font-size: 16px;
 }
 
-/* przycisk w .quote-actions jest w gridzie */
 .quote-actions > .search-btn {
   justify-self: center;
 }

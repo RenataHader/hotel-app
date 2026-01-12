@@ -11,12 +11,10 @@ export default function BackgroundRotator({
 
   const len = images.length;
 
-  // 2 warstwy, przełączane naprzemiennie
   const [idxA, setIdxA] = useState(0);
   const [idxB, setIdxB] = useState(len > 1 ? 1 : 0);
   const [showA, setShowA] = useState(true);
 
-  // refs, żeby interval miał aktualne wartości (bez bugów)
   const showARef = useRef(true);
   const activeRef = useRef(0);
 

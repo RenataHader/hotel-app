@@ -23,7 +23,6 @@ public class ApiExceptionHandler {
 
         Map<String, String> fields = new LinkedHashMap<>();
         for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
-            // jeśli kilka błędów na to samo pole, zostaw pierwszy
             fields.putIfAbsent(fe.getField(), fe.getDefaultMessage());
         }
 

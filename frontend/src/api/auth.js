@@ -1,4 +1,3 @@
-// src/api/auth.js
 import http from "./http";
 import { API } from "./endpoints";
 
@@ -15,4 +14,9 @@ export async function registerGuest(payload) {
 export async function me() {
   const { data } = await http.get(API.identity.me);
   return data; // {id, email, role, employeeId, guestId}
+}
+
+export async function registerEmployee(payload) {
+  const { data } = await http.post("/identity/auth/register-employee", payload);
+  return data;
 }

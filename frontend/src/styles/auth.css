@@ -8,7 +8,7 @@
 
 .auth-card {
   width: 100%;
-  max-width: 360px; /* domyślnie jak login */
+  max-width: 360px;
   padding: 28px;
   border-radius: 18px;
 

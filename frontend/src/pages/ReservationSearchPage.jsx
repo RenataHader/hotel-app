@@ -15,7 +15,6 @@ export default function ReservationSearchPage() {
   const groups = useMemo(() => groupRooms(availableRooms || []), [availableRooms]);
 
   const offers = useMemo(() => {
-    // tylko oferty które pomieszczą guestCount (single/pakiety)
     return buildRoomOffers(groups, guestCount, 30);
   }, [groups, guestCount]);
 
@@ -26,11 +25,9 @@ export default function ReservationSearchPage() {
       checkOutDate: lastSearch?.to ?? null,
       guestCount: guestCount,
 
-      // tu przekazujemy KONKRETNE pokoje do pakietu
       roomIds: o.roomIds,
       roomId: o.roomIds?.[0] ?? null,
 
-      // backend wymaga NotBlank:
       mealType: "Brak",
       serviceIds: [],
 
@@ -70,8 +67,7 @@ export default function ReservationSearchPage() {
                   </div>
 
                   <div className="offer-price">
-                    <b>{String(o.totalPricePerNight)} PLN</b>
-                    <div style={{ fontSize: 12, opacity: 0.85 }}>/ noc (suma)</div>
+                    <b>{String(o.totalPricePerNight)} PLN / noc</b>
                   </div>
                 </div>
 
