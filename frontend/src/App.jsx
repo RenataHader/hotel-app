@@ -41,11 +41,11 @@ export default function App() {
               <Route path="/guest" element={<GuestHome />} />
             </Route>
 
-            <Route element={<RoleRoute allowedRoles={["RECEPTIONIST", "MANAGER"]} />}>
+            <Route element={<RoleRoute allowedRoles={["EMPLOYEE"]} />}>
               <Route path="/staff" element={<StaffPanelPage />} />
             </Route>
 
-            <Route element={<RoleRoute allowedRoles={["ADMIN", "MANAGER"]} />}>
+            <Route element={<RoleRoute allowedRoles={["ADMIN"]} />}>
               <Route path="/admin" element={<AdminPanelPage />} />
             </Route>
 

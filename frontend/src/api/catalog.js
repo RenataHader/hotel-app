@@ -28,3 +28,25 @@ export async function getServices() {
   });
   return Array.isArray(data) ? data : [];
 }
+
+export async function getRooms() {
+  const { data } = await http.get("/catalog/api/rooms", {
+    headers: { Accept: "application/json" },
+  });
+  return Array.isArray(data) ? data : [];
+}
+
+export async function createRoom(payload) {
+  const { data } = await http.post("/catalog/api/rooms", payload, {
+    headers: { "Content-Type": "application/json" },
+  });
+  return data;
+}
+
+export async function getRoomTypes(hotelId) {
+  const { data } = await http.get("/catalog/api/rooms/types", {
+    params: hotelId ? { hotelId } : {},
+    headers: { Accept: "application/json" },
+  });
+  return Array.isArray(data) ? data : [];
+}

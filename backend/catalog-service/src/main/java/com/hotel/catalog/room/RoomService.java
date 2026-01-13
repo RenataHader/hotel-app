@@ -56,18 +56,28 @@ public class RoomService {
         var hotel = hotelRepo.findById(request.getHotelId())
                 .orElseThrow(() -> new RuntimeException("Hotel not found"));
 
+        String roomNumber = String.valueOf(request.getRoomNumber()).trim();
+
+        if (roomRepo.existsByHotel_IdAndRoomNumber(request.getHotelId(), roomNumber)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Pokój o numerze " + roomNumber + " już istnieje w tym hotelu."
+            );
+        }
+
         Room room = Room.builder()
                 .hotel(hotel)
-                .roomNumber(request.getRoomNumber())
+                .roomNumber(roomNumber)
                 .type(request.getType())
                 .numberOfBeds(request.getNumberOfBeds())
                 .price(request.getPrice())
+                .description(request.getDescription())
                 .status("AVAILABLE")
                 .build();
 
-        Room saved = roomRepo.save(room);
-        return mapToResponse(saved);
+        return mapToResponse(roomRepo.save(room));
     }
+
 
     public RoomResponse getRoomById(Integer id) {
         Room room = roomRepo.findById(id)
@@ -83,6 +93,18 @@ public class RoomService {
         return rooms.stream().map(this::mapToResponse).toList();
     }
 
+    public List<String> getRoomTypes(Integer hotelId) {
+        List<String> types = (hotelId == null)
+                ? roomRepo.findDistinctTypesAll()
+                : roomRepo.findDistinctTypesByHotel(hotelId);
+
+        return types.stream()
+                .filter(t -> t != null && !t.trim().isBlank())
+                .map(String::trim)
+                .toList();
+    }
+
+
     private RoomResponse mapToResponse(Room room) {
         return RoomResponse.builder()
                 .id(room.getId())
@@ -93,6 +115,7 @@ public class RoomService {
                 .numberOfBeds(room.getNumberOfBeds())
                 .price(room.getPrice())
                 .status(room.getStatus())
+                .description(room.getDescription())
                 .build();
     }
 }

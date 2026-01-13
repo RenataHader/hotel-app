@@ -23,5 +23,18 @@ public class OperationsClient {
                 .block();
     }
 
-    public record EmployeeResponse(Integer id, Integer hotelId) {}
+    public EmployeeResponse getEmployee(int employeeId) {
+        return web.get()
+                .uri("/employees/{id}", employeeId)
+                .retrieve()
+                .bodyToMono(EmployeeResponse.class)
+                .block();
+    }
+
+    public String getPositionForEmployee(int employeeId) {
+        EmployeeResponse emp = getEmployee(employeeId);
+        return emp != null ? emp.position() : null;
+    }
+
+    public record EmployeeResponse(Integer id, Integer hotelId, String position) {}
 }

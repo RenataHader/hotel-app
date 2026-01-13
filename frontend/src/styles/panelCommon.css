@@ -430,3 +430,31 @@
 .input-glass::placeholder {
   font-size: 14px;
 }
+
+.tabBtn {
+  background: #ffffff;
+  color: #111;
+  border: 1px solid rgba(0,0,0,.12);
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.tabBtn--active {
+  border-color: rgba(0,0,0,.35);
+}
+
+.tabBtn--disabled {
+  background: #f1f1f1;
+  color: rgba(0,0,0,.35);
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.noAccessBox {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #fff7e6;
+  border: 1px solid rgba(0,0,0,.12);
+}

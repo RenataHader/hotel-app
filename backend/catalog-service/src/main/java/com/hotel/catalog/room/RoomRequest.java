@@ -10,4 +10,5 @@ public class RoomRequest {
     private String type;
     private Integer numberOfBeds;
     private BigDecimal price;
+    private String description;
 }

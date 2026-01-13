@@ -5,5 +5,7 @@ public record AccountResponse(
         String email,
         String role,
         Integer employeeId,
-        Integer guestId
+        Integer guestId,
+        Integer hotelId,
+        String position
 ) {}

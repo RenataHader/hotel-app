@@ -48,5 +48,10 @@ public class RoomController {
         return roomService.searchRooms(hotelId, type);
     }
 
+    @GetMapping("/types")
+    public List<String> getTypes(@RequestParam(required = false) Integer hotelId) {
+        return roomService.getRoomTypes(hotelId);
+    }
+
 
 }

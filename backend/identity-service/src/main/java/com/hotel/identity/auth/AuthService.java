@@ -120,7 +120,7 @@ public class AuthService {
         Account acc = Account.builder()
                 .email(req.email())
                 .password(encoder.encode(req.password()))
-                .role(req.role())
+                .role("EMPLOYEE")
                 .employeeId(req.employeeId())
                 .guestId(null)
                 .build();

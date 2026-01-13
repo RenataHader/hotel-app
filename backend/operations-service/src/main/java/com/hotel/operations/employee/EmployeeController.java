@@ -40,4 +40,9 @@ public class EmployeeController {
     public void delete(@PathVariable Integer id) {
         service.delete(id);
     }
+
+    @GetMapping("/positions")
+    public List<String> positions() {
+        return service.getPositions();
+    }
 }

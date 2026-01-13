@@ -5,6 +5,7 @@ import "../styles/panelCommon.css";
 import { getHotelReservations } from "../api/booking";
 import { checkInReservation, checkOutReservation } from "../api/operations";
 import { useAuth } from "../auth/AuthContext";
+import { canAccessTab } from "../utils/permissions";
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
@@ -12,7 +13,7 @@ export default function StaffPanelPage() {
   const nav = useNavigate();
   const { user, signOut } = useAuth();
 
-  const [view, setView] = useState("checkin");
+  const [view, setView] = useState("checkin"); // "checkin" | "checkout"
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -22,6 +23,10 @@ export default function StaffPanelPage() {
   const menuRef = useRef(null);
 
   const today = useMemo(() => todayIso(), []);
+  const canCheck = useMemo(() => canAccessTab(user, "checkinout"), [user]);
+
+  const position = user?.position || "";
+  const title = position.toLowerCase().includes("recepc") ? "Panel recepcji" : "Panel pracownika";
 
   useEffect(() => {
     function onDoc(e) {
@@ -64,6 +69,10 @@ export default function StaffPanelPage() {
   const list = view === "checkin" ? checkIns : checkOuts;
 
   async function onCheckIn(id) {
+    if (!canCheck) {
+      setErr("Brak uprawnień: check-in/check-out dostępne tylko dla stanowiska Recepcjonista.");
+      return;
+    }
     setBusyId(id);
     setErr("");
     try {
@@ -77,6 +86,10 @@ export default function StaffPanelPage() {
   }
 
   async function onCheckOut(id) {
+    if (!canCheck) {
+      setErr("Brak uprawnień: check-in/check-out dostępne tylko dla stanowiska Recepcjonista.");
+      return;
+    }
     setBusyId(id);
     setErr("");
     try {
@@ -99,18 +112,19 @@ export default function StaffPanelPage() {
     );
   }
 
-  const roleLabel = (user?.role || "").replace(/^ROLE_/, "");
-
   return (
     <div className="panel-page">
       <div className="panel-wrap">
         <div className="panel-card">
           <div className="panel-head">
             <div>
-              <h2 className="panel-title">Panel recepcji</h2>
+              <h2 className="panel-title">{title}</h2>
               <div className="panel-sub">
                 <span style={{ marginLeft: 10 }}>
                   Dzisiaj: <span className="pill">{today}</span>
+                </span>
+                <span style={{ marginLeft: 10 }}>
+                  Stanowisko: <span className="pill">{position || "—"}</span>
                 </span>
               </div>
             </div>
@@ -119,7 +133,6 @@ export default function StaffPanelPage() {
               <button className="panel-btn" type="button" onClick={reload}>
                 Odśwież
               </button>
-
 
               <div className="panel-top-right" ref={menuRef}>
                 <button
@@ -140,10 +153,14 @@ export default function StaffPanelPage() {
                           <div className="dropdown-email">{user.email || "Użytkownik"}</div>
                         </div>
 
+                        {/* Zakładki recepcji – disabled jeśli brak dostępu */}
                         <button
-                          className="dropdown-item"
+                          className={`dropdown-item ${!canCheck ? "disabled" : ""}`}
                           type="button"
+                          disabled={!canCheck}
+                          title={!canCheck ? "Dostęp tylko dla stanowiska: Recepcjonista" : ""}
                           onClick={() => {
+                            if (!canCheck) return;
                             setMenuOpen(false);
                             setView("checkin");
                           }}
@@ -152,9 +169,12 @@ export default function StaffPanelPage() {
                         </button>
 
                         <button
-                          className="dropdown-item"
+                          className={`dropdown-item ${!canCheck ? "disabled" : ""}`}
                           type="button"
+                          disabled={!canCheck}
+                          title={!canCheck ? "Dostęp tylko dla stanowiska: Recepcjonista" : ""}
                           onClick={() => {
+                            if (!canCheck) return;
                             setMenuOpen(false);
                             setView("checkout");
                           }}
@@ -197,6 +217,13 @@ export default function StaffPanelPage() {
             </div>
           </div>
 
+          {!canCheck && (
+            <div className="panel-box" style={{ marginTop: 12 }}>
+              <b>Info:</b> Check-in / Check-out jest dostępny tylko dla stanowiska{" "}
+              <b>Recepcjonista</b>. Twoje stanowisko: <b>{position || "—"}</b>.
+            </div>
+          )}
+
           {err && <div className="panel-error">{err}</div>}
 
           <div className="panel-box" style={{ marginTop: 12 }}>
@@ -206,9 +233,7 @@ export default function StaffPanelPage() {
 
             {list.length === 0 ? (
               <div style={{ opacity: 0.85 }}>
-                {view === "checkin"
-                  ? "Brak check-in na dzisiaj."
-                  : "Brak check-out na dzisiaj."}
+                {view === "checkin" ? "Brak check-in na dzisiaj." : "Brak check-out na dzisiaj."}
               </div>
             ) : (
               <table className="panel-table">
@@ -236,10 +261,12 @@ export default function StaffPanelPage() {
                             className="panel-btn"
                             type="button"
                             disabled={
+                              !canCheck ||
                               busyId === r.id ||
                               r.status === "CHECKED_IN" ||
                               r.status === "CHECKED_OUT"
                             }
+                            title={!canCheck ? "Dostęp tylko dla stanowiska: Recepcjonista" : ""}
                             onClick={() => onCheckIn(r.id)}
                           >
                             {busyId === r.id ? "..." : "Check-in"}
@@ -248,7 +275,8 @@ export default function StaffPanelPage() {
                           <button
                             className="panel-btn"
                             type="button"
-                            disabled={busyId === r.id || r.status === "CHECKED_OUT"}
+                            disabled={!canCheck || busyId === r.id || r.status === "CHECKED_OUT"}
+                            title={!canCheck ? "Dostęp tylko dla stanowiska: Recepcjonista" : ""}
                             onClick={() => onCheckOut(r.id)}
                           >
                             {busyId === r.id ? "..." : "Check-out"}

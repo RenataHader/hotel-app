@@ -31,3 +31,10 @@ export async function checkOutReservation(reservationId) {
   );
   return data;
 }
+
+export async function getEmployeePositions() {
+  const { data } = await http.get("/operations/employees/positions", {
+    headers: { Accept: "application/json" },
+  });
+  return Array.isArray(data) ? data : [];
+}

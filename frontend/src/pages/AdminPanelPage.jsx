@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/panelCommon.css";
 
-import { getHotels } from "../api/catalog";
+import { getHotels, getRooms, getRoomTypes, createRoom } from "../api/catalog";
 import { getAllReservations } from "../api/booking";
-import { createEmployee, getEmployees } from "../api/operations";
+import { createEmployee, getEmployees, getEmployeePositions } from "../api/operations";
 import { registerEmployee } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
 
@@ -31,6 +31,20 @@ function buildEmail(firstName, lastName, n = 0) {
   return n > 0 ? `${base}${n}@hotel.local` : `${base}@hotel.local`;
 }
 
+const RE_FIRST_NAME = /^[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]+(?: [A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]+)*$/;
+const RE_LAST_NAME = /^[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]+$/;
+const RE_POSITION = /^[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż ]+$/;
+const RE_PHONE_9 = /^\d{9}$/;
+
+function isValidEmail(email) {
+  // prosta, praktyczna walidacja (wystarczy na frontend)
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+}
+
+function normalizeSpaces(s) {
+  return String(s || "").trim().replace(/\s+/g, " ");
+}
+
 export default function AdminPanelPage() {
   const nav = useNavigate();
   const { user, signOut } = useAuth();
@@ -52,11 +66,17 @@ export default function AdminPanelPage() {
   const [busy, setBusy] = useState(false);
 
   const [hotelFilter, setHotelFilter] = useState("");
+  const [positions, setPositions] = useState([]);
+
+  const [employeeHotelFilter, setEmployeeHotelFilter] = useState("");
+  const [employeePositionFilter, setEmployeePositionFilter] = useState("");
 
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
-    position: "Recepcjonista",
+    position: "",
+    customPosition: "",
+    useCustomPosition: false,
     hireDate: todayIso(),
     phoneNumber: "",
     hotelId: "",
@@ -65,8 +85,30 @@ export default function AdminPanelPage() {
     email: "",
   });
 
+  const [rooms, setRooms] = useState([]);
+  const [roomHotelFilter, setRoomHotelFilter] = useState("");
+  const [roomTypeFilter, setRoomTypeFilter] = useState("");
+  const [roomTypes, setRoomTypes] = useState([]);
+  const [roomModalOpen, setRoomModalOpen] = useState(false);
+
+  const [roomForm, setRoomForm] = useState({
+    hotelId: "",
+    roomNumber: "",
+    type: "",
+    useCustomType: false,
+    customType: "",
+    numberOfBeds: 1,
+    price: "",
+    description: "",
+  });
+
+
   function setField(name, value) {
     setForm((f) => ({ ...f, [name]: value }));
+  }
+
+  function setRoomField(name, value) {
+    setRoomForm((f) => ({ ...f, [name]: value }));
   }
 
   useEffect(() => {
@@ -90,24 +132,68 @@ export default function AdminPanelPage() {
     return m;
   }, [hotels]);
 
+  const filteredEmployees = useMemo(() => {
+    return employees.filter((emp) => {
+      const okHotel =
+        !employeeHotelFilter || String(emp.hotelId) === String(employeeHotelFilter);
+
+      const okPos =
+        !employeePositionFilter || String(emp.position) === String(employeePositionFilter);
+
+      return okHotel && okPos;
+    });
+  }, [employees, employeeHotelFilter, employeePositionFilter]);
+
+  const filteredRooms = useMemo(() => {
+    return rooms.filter((room) => {
+      const okHotel = !roomHotelFilter || String(room.hotelId) === String(roomHotelFilter);
+      const okType = !roomTypeFilter || String(room.type) === String(roomTypeFilter);
+      return okHotel && okType;
+    });
+  }, [rooms, roomHotelFilter, roomTypeFilter]);
+
   async function loadAll() {
     setLoading(true);
     setErr("");
     try {
-      const [h, e, r] = await Promise.all([
+      const [h, e, r, pos, roomsRes, typesRes] = await Promise.all([
         getHotels(),
         getEmployees(),
         getAllReservations(),
+        getEmployeePositions(),
+        getRooms(),
+        getRoomTypes(),
       ]);
+
       setHotels(Array.isArray(h) ? h : []);
       setEmployees(Array.isArray(e) ? e : []);
       setReservations(Array.isArray(r) ? r : []);
+
+      setRooms(Array.isArray(roomsRes) ? roomsRes : []);
+      setRoomTypes(Array.isArray(typesRes) ? typesRes : []);
+
+      const raw = Array.isArray(pos) ? pos : [];
+      const list = raw.filter((p) => String(p).trim().toLowerCase() !== "administrator");
+      setPositions(list);
+
+      setForm((f) => {
+        // jeśli lista pustych stanowisk -> wymuś tryb "wpisz ręcznie"
+        if (list.length === 0) {
+          return { ...f, useCustomPosition: true, position: "" };
+        }
+
+        // jeśli lista niepusta -> dopasuj position do listy
+        const current = f.position || "";
+        const exists = current && list.includes(current);
+        return { ...f, useCustomPosition: false, position: exists ? current : (list[0] || "") };
+      });
     } catch (e) {
       setErr(e?.response?.data?.message || "Błąd pobierania danych.");
     } finally {
       setLoading(false);
     }
   }
+
 
   useEffect(() => {
     loadAll();
@@ -130,6 +216,19 @@ export default function AdminPanelPage() {
     setModalOpen(true);
   }
 
+  function openRoomModal() {
+    setOk("");
+    setErr("");
+    setRoomModalOpen(true);
+  }
+
+  function closeRoomModal() {
+    setRoomModalOpen(false);
+    setOk("");
+    setErr("");
+  }
+
+
   async function registerWithAutoEmail({
     employeeId,
     password,
@@ -146,7 +245,7 @@ export default function AdminPanelPage() {
         email,
         password,
         employeeId,
-        role: "RECEPTIONIST",
+        role: "EMPLOYEE",
       });
       return email;
     };
@@ -177,19 +276,55 @@ export default function AdminPanelPage() {
     throw new Error("Nie udało się wygenerować wolnego emaila (za dużo kolizji).");
   }
 
-  async function onCreateEmployee(e) {
+    async function onCreateEmployee(e) {
     e.preventDefault();
     setErr("");
     setOk("");
+
+    const firstName = String(form.firstName || "").trim();
+    const lastName = String(form.lastName || "").trim();
+
+    const finalPosition = form.useCustomPosition
+      ? normalizeSpaces(form.customPosition)
+      : normalizeSpaces(form.position);
+
+    const phone = String(form.phoneNumber || "").trim();
+    const password = String(form.password || "");
+
+    if (!firstName || !RE_FIRST_NAME.test(firstName)) {
+      setErr("Imię może zawierać tylko litery.");
+      return;
+    }
+    if (!lastName || !RE_LAST_NAME.test(lastName)) {
+      setErr("Nazwisko moze zawierać tylko litery.");
+      return;
+    }
+    if (!finalPosition || !RE_POSITION.test(finalPosition)) {
+      setErr("Stanowisko może zawirać tylko litery.");
+      return;
+    }
+    if (!RE_PHONE_9.test(phone)) {
+      setErr("Telefon musi mieć dokładnie 9 cyfr.");
+      return;
+    }
+    if (password.length < 8) {
+      setErr("Hasło musi mieć minimum 8 znaków.");
+      return;
+    }
+    if (form.emailManual && !isValidEmail(form.email)) {
+      setErr("Email ma nieprawidłowy format.");
+      return;
+    }
+
     setBusy(true);
 
     try {
       const emp = await createEmployee({
-        firstName: form.firstName,
-        lastName: form.lastName,
-        position: form.position,
+        firstName,
+        lastName,
+        position: finalPosition,
         hireDate: form.hireDate,
-        phoneNumber: form.phoneNumber || null,
+        phoneNumber: phone,
         hotelId: Number(form.hotelId),
       });
 
@@ -202,7 +337,7 @@ export default function AdminPanelPage() {
         emailManual: form.emailManual,
       });
 
-      setOk(`Utworzono pracownika i konto: ${finalEmail} (employeeId=${emp.id})`);
+      setOk(`Utworzono pracownika: ${finalEmail}`);
 
       setForm((f) => ({
         ...f,
@@ -212,6 +347,11 @@ export default function AdminPanelPage() {
         password: "",
         emailManual: false,
         email: "",
+        hireDate: todayIso(),
+        useCustomPosition: false,
+        customPosition: "",
+        position: positions[0] || "",
+        hotelId: "",
       }));
 
       setModalOpen(false);
@@ -229,6 +369,65 @@ export default function AdminPanelPage() {
     }
   }
 
+  async function onCreateRoom(e) {
+    e.preventDefault();
+    setErr("");
+    setOk("");
+    setBusy(true);
+
+    try {
+      const hotelId = Number(roomForm.hotelId);
+      const roomNumber = String(roomForm.roomNumber || "").trim();
+
+      const finalType = roomForm.useCustomType
+        ? normalizeSpaces(roomForm.customType)
+        : normalizeSpaces(roomForm.type);
+
+      const numberOfBeds = Number(roomForm.numberOfBeds);
+
+      const priceStr = String(roomForm.price || "").trim().replace(",", ".");
+      const priceNum = Number(priceStr);
+
+      if (!hotelId) throw new Error("Wybierz hotel.");
+      if (!roomNumber) throw new Error("Podaj numer pokoju.");
+      if (!finalType) throw new Error("Wybierz typ albo wpisz nowy.");
+      if (!Number.isFinite(numberOfBeds) || numberOfBeds < 1)
+        throw new Error("Liczba łóżek musi być >= 1.");
+      if (!priceStr || !Number.isFinite(priceNum) || priceNum <= 0)
+        throw new Error("Cena musi być > 0.");
+
+      await createRoom({
+        hotelId,
+        roomNumber,
+        type: finalType,
+        numberOfBeds,
+        price: priceStr, // string -> BigDecimal OK
+        description: String(roomForm.description || "").trim(),
+      });
+
+      setOk("Utworzono pokój.");
+
+      setRoomForm({
+        hotelId: "",
+        roomNumber: "",
+        type: "",
+        useCustomType: false,
+        customType: "",
+        numberOfBeds: 1,
+        price: "",
+        description: "",
+      });
+
+      setRoomModalOpen(false);
+      await loadAll();
+    } catch (e2) {
+      console.error(e2);
+      setErr(e2?.response?.data?.message || e2?.message || "Nie udało się utworzyć pokoju.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="panel-page">
@@ -238,8 +437,6 @@ export default function AdminPanelPage() {
       </div>
     );
   }
-
-  const roleLabel = (user?.role || "").replace(/^ROLE_/, "");
 
   return (
     <div className="panel-page">
@@ -258,6 +455,11 @@ export default function AdminPanelPage() {
               {view === "employees" && (
                 <button className="panel-btn" type="button" onClick={openModal}>
                   + Dodaj pracownika
+                </button>
+              )}
+              {view === "rooms" && (
+                <button className="panel-btn" type="button" onClick={openRoomModal}>
+                  + Dodaj pokój
                 </button>
               )}
 
@@ -286,6 +488,8 @@ export default function AdminPanelPage() {
                           onClick={() => {
                             setMenuOpen(false);
                             setView("employees");
+                              setOk("");
+                              setErr("");
                           }}
                         >
                           {view === "employees" ? "✓ " : ""}Pracownicy
@@ -297,9 +501,24 @@ export default function AdminPanelPage() {
                           onClick={() => {
                             setMenuOpen(false);
                             setView("reservations");
+                            setOk("");
+                            setErr("");
                           }}
                         >
                           {view === "reservations" ? "✓ " : ""}Rezerwacje
+                        </button>
+
+                        <button
+                          className="dropdown-item"
+                          type="button"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            setView("rooms");
+                            setOk("");
+                            setErr("");
+                          }}
+                        >
+                          {view === "rooms" ? "✓ " : ""}Pokoje
                         </button>
 
                         <div className="dropdown-sep" />
@@ -357,10 +576,63 @@ export default function AdminPanelPage() {
                 <h3 className="panel-h3" style={{ margin: 0 }}>
                   Lista pracowników
                 </h3>
-                <div className="panel-sub">{employees.length} pozycji</div>
+
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span style={{ opacity: 0.85, fontSize: 12 }}>Hotel:</span>
+                    <select
+                      className="select-glass"
+                      value={employeeHotelFilter}
+                      onChange={(e) => setEmployeeHotelFilter(e.target.value)}
+                      style={{ width: 220 }}
+                    >
+                      <option value="">Wszystkie</option>
+                      {hotels.map((h) => (
+                        <option key={h.id} value={h.id}>
+                          {h.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span style={{ opacity: 0.85, fontSize: 12 }}>Stanowisko:</span>
+                    <select
+                      className="select-glass"
+                      value={employeePositionFilter}
+                      onChange={(e) => setEmployeePositionFilter(e.target.value)}
+                      style={{ width: 220 }}
+                    >
+                      <option value="">Wszystkie</option>
+                      {positions.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="panel-sub">
+                    {filteredEmployees.length} / {employees.length}
+                  </div>
+
+                  {(employeeHotelFilter || employeePositionFilter) && (
+                    <button
+                      className="panel-btn ghost"
+                      type="button"
+                      onClick={() => {
+                        setEmployeeHotelFilter("");
+                        setEmployeePositionFilter("");
+                      }}
+                    >
+                      Wyczyść
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {employees.length === 0 ? (
+
+              {filteredEmployees.length === 0 ? (
                 <div style={{ opacity: 0.85, marginTop: 10 }}>Brak pracowników.</div>
               ) : (
                 <div style={{ marginTop: 10 }}>
@@ -375,7 +647,7 @@ export default function AdminPanelPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {employees.map((e) => (
+                      {filteredEmployees.map((e) => (
                         <tr key={e.id}>
                           <td>{e.id}</td>
                           <td>{e.firstName}</td>
@@ -391,7 +663,7 @@ export default function AdminPanelPage() {
                 </div>
               )}
             </section>
-          ) : (
+          ) : view === "reservations" ? (
             <section className="panel-box" style={{ marginTop: 12 }}>
               <div className="panel-head">
                 <h3 className="panel-h3" style={{ margin: 0 }}>
@@ -449,9 +721,100 @@ export default function AdminPanelPage() {
                 </div>
               )}
             </section>
-          )}
-        </div>
+            ) : (
+              <section className="panel-box" style={{ marginTop: 12 }}>
+                <div className="panel-head">
+                  <h3 className="panel-h3" style={{ margin: 0 }}>
+                    Pokoje
+                  </h3>
 
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <span style={{ opacity: 0.85, fontSize: 12 }}>Hotel:</span>
+                      <select
+                        className="select-glass"
+                        value={roomHotelFilter}
+                        onChange={(e) => setRoomHotelFilter(e.target.value)}
+                        style={{ width: 220 }}
+                      >
+                        <option value="">Wszystkie</option>
+                        {hotels.map((h) => (
+                          <option key={h.id} value={h.id}>
+                            {h.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <span style={{ opacity: 0.85, fontSize: 12 }}>Typ:</span>
+                      <select
+                        className="select-glass"
+                        value={roomTypeFilter}
+                        onChange={(e) => setRoomTypeFilter(e.target.value)}
+                        style={{ width: 220 }}
+                      >
+                        <option value="">Wszystkie</option>
+                        {roomTypes.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="panel-sub">
+                      {filteredRooms.length} / {rooms.length}
+                    </div>
+
+                    {(roomHotelFilter || roomTypeFilter) && (
+                      <button
+                        className="panel-btn ghost"
+                        type="button"
+                        onClick={() => {
+                          setRoomHotelFilter("");
+                          setRoomTypeFilter("");
+                        }}
+                      >
+                        Wyczyść
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {filteredRooms.length === 0 ? (
+                  <div style={{ opacity: 0.85, marginTop: 10 }}>Brak pokoi.</div>
+                ) : (
+                  <div style={{ marginTop: 10 }}>
+                    <table className="panel-table">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Hotel</th>
+                          <th>Nr pokoju</th>
+                          <th>Typ</th>
+                          <th>Łóżka</th>
+                          <th>Cena</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredRooms.map((room) => (
+                          <tr key={room.id}>
+                            <td>{room.id}</td>
+                            <td>{room.hotelName || hotelsById.get(room.hotelId) || room.hotelId}</td>
+                            <td>{room.roomNumber}</td>
+                            <td><span className="pill">{room.type}</span></td>
+                            <td>{room.numberOfBeds}</td>
+                            <td>{room.price}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+        </div>
 
         {modalOpen && (
           <div className="modal-backdrop" onMouseDown={closeModal}>
@@ -481,35 +844,80 @@ export default function AdminPanelPage() {
                   />
                 </div>
 
-                <div className="form-row">
-                  <input
-                    className="input-glass"
-                    placeholder="Stanowisko"
-                    value={form.position}
-                    onChange={(e) => setField("position", e.target.value)}
-                    required
-                  />
-                  <input
-                    className="input-glass"
-                    type="date"
-                    value={form.hireDate}
-                    onChange={(e) => setField("hireDate", e.target.value)}
-                    required
-                  />
-                </div>
+                  <div className="form-row">
+                    {!form.useCustomPosition ? (
+                      <select
+                        className="select-glass"
+                        value={form.position}
+                        onChange={(e) => setField("position", e.target.value)}
+                        required
+                      >
+                        {positions.length === 0 ? (
+                          <option value="">Brak stanowisk w bazie</option>
+                        ) : (
+                          positions.map((p) => (
+                            <option key={p} value={p}>
+                              {p}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    ) : (
+                      <input
+                        className="input-glass"
+                        placeholder="Wpisz nowe stanowisko"
+                        value={form.customPosition}
+                        onChange={(e) => setField("customPosition", e.target.value)}
+                        required
+                      />
+                    )}
+
+                    <input
+                      className="input-glass"
+                      type="date"
+                      value={form.hireDate}
+                      onChange={(e) => setField("hireDate", e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <label style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 12, opacity: 0.9 }}>
+                    <input
+                      type="checkbox"
+                      checked={roomForm.useCustomType}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setRoomForm((f) => ({
+                          ...f,
+                          useCustomType: checked,
+                          customType: checked ? f.customType : "",
+                          type: checked ? "" : f.type, // jak przechodzisz na custom -> czyści select
+                        }));
+                      }}
+                    />
+
+                    Nowe stanowisko (wpisz ręcznie)
+                  </label>
 
                 <div className="form-row">
                   <input
                     className="input-glass"
-                    placeholder="Telefon (opcjonalnie)"
+                    placeholder="Telefon (9 cyfr)"
                     value={form.phoneNumber}
                     onChange={(e) => setField("phoneNumber", e.target.value)}
+                    inputMode="numeric"
+                    maxLength={9}
                   />
 
                   <select
                     className="select-glass"
                     value={form.hotelId}
-                    onChange={(e) => setField("hotelId", e.target.value)}
+                    onChange={async (e) => {
+                      const id = e.target.value;
+                      setRoomField("hotelId", id);
+                      const types = await getRoomTypes(id);
+                      setRoomTypes(types);
+                    }}
                     required
                   >
                     <option value="">Wybierz hotel</option>
@@ -526,6 +934,7 @@ export default function AdminPanelPage() {
                 <div className="form-row">
                   <input
                     className="input-glass"
+                    type="email"
                     placeholder="Email (auto: imie.nazwisko@hotel.local)"
                     value={form.email}
                     onChange={(e) => setField("email", e.target.value)}
@@ -566,6 +975,126 @@ export default function AdminPanelPage() {
             </div>
           </div>
         )}
+
+        {roomModalOpen && (
+          <div className="modal-backdrop" onMouseDown={closeRoomModal}>
+            <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
+              <div className="modal-head">
+                <h3 className="modal-title">Dodaj pokój</h3>
+                <button className="modal-close" type="button" onClick={closeRoomModal} aria-label="Zamknij">
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={onCreateRoom} className="form-grid">
+                <div className="form-row">
+                  <select
+                    className="select-glass"
+                    value={roomForm.hotelId}
+                    onChange={(e) => setRoomField("hotelId", e.target.value)}
+                    required
+                  >
+                    <option value="">Wybierz hotel</option>
+                    {hotels.map((h) => (
+                      <option key={h.id} value={h.id}>
+                        {h.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <input
+                    className="input-glass"
+                    placeholder="Nr pokoju (np. 101)"
+                    value={roomForm.roomNumber}
+                    onChange={(e) => setRoomField("roomNumber", e.target.value)}
+                    required
+                  />
+                </div>
+
+                {/* 2) Dwie kolumny: lewa (typ+checkbox+cena), prawa (łóżka+opis) */}
+                <div className="form-row" style={{ alignItems: "flex-start" }}>
+                  {/* LEWA KOLUMNA */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
+                    {!roomForm.useCustomType ? (
+                      <select
+                        className="select-glass"
+                        value={roomForm.type}
+                        onChange={(e) => setRoomField("type", e.target.value)}
+                        required
+                      >
+                        <option value="">Wybierz typ</option>
+                        {roomTypes.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        className="input-glass"
+                        placeholder="Wpisz nowy typ pokoju"
+                        value={roomForm.customType}
+                        onChange={(e) => setRoomField("customType", e.target.value)}
+                        required
+                      />
+                    )}
+
+                    <label style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 12, opacity: 0.9 }}>
+                      <input
+                        type="checkbox"
+                        checked={roomForm.useCustomType}
+                        onChange={(e) => setRoomField("useCustomType", e.target.checked)}
+                      />
+                      Nowy typ (wpisz ręcznie)
+                    </label>
+
+                    <input
+                      className="input-glass"
+                      placeholder="Cena"
+                      value={roomForm.price}
+                      onChange={(e) => setRoomField("price", e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  {/* PRAWA KOLUMNA */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
+                    <input
+                      className="input-glass"
+                      type="number"
+                      min={1}
+                      value={roomForm.numberOfBeds}
+                      onChange={(e) => setRoomField("numberOfBeds", e.target.value)}
+                      required
+                      placeholder="Liczba łóżek"
+                    />
+
+                    <textarea
+                      className="input-glass"
+                      placeholder="Opis pokoju (opcjonalnie)"
+                      value={roomForm.description}
+                      onChange={(e) => setRoomField("description", e.target.value)}
+                      rows={3}
+                      style={{ resize: "vertical" }}
+                    />
+                  </div>
+                </div>
+                
+                {err && <div className="panel-error">{err}</div>}
+
+                <div className="modal-actions">
+                  <button className="panel-btn ghost" type="button" onClick={closeRoomModal} disabled={busy}>
+                    Anuluj
+                  </button>
+                  <button className="panel-btn" type="submit" disabled={busy}>
+                    {busy ? "Tworzę..." : "Utwórz"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

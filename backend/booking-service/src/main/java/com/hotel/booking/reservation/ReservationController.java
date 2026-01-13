@@ -20,7 +20,7 @@ public class ReservationController {
     private final ReservationRepository reservationRepo;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public List<ReservationResponse> getAll() {
         return reservationService.getAllReservations();
     }
@@ -32,7 +32,7 @@ public class ReservationController {
     }
 
     @GetMapping("/hotel")
-    @PreAuthorize("hasAnyRole('RECEPTIONIST','MANAGER')")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public List<ReservationResponse> getMyHotelReservations() {
         return reservationService.getHotelReservations();
     }
@@ -51,7 +51,7 @@ public class ReservationController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('RECEPTIONIST','MANAGER')")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public void updateStatus(@PathVariable Integer id, @RequestParam String value) {
         reservationService.updateStatus(id, value);
     }
@@ -78,7 +78,7 @@ public class ReservationController {
     }
 
     @GetMapping("/hotel/page")
-    @PreAuthorize("hasAnyRole('RECEPTIONIST','MANAGER')")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public Page<ReservationResponse> getMyHotelReservationsPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size

@@ -4,21 +4,17 @@ export function normalizeRole(role) {
 
 export function homeByRole(roleRaw) {
   const role = normalizeRole(roleRaw);
-
-  if (role === "ADMIN" || role === "MANAGER") return "/admin";
-  if (role === "RECEPTIONIST") return "/staff";
+  if (role === "ADMIN") return "/admin";
+  if (role === "EMPLOYEE") return "/staff";
   return "/guest";
 }
+
 
 export function isNextAllowed(nextPath, roleRaw) {
   const role = normalizeRole(roleRaw);
   if (!nextPath) return false;
 
-  if (role === "ADMIN" || role === "MANAGER") {
-    return nextPath.startsWith("/admin") || nextPath.startsWith("/staff");
-}
-  if (role === "RECEPTIONIST") {
-    return nextPath.startsWith("/staff");
-  }
+  if (role === "ADMIN") return nextPath.startsWith("/admin");
+  if (role === "EMPLOYEE") return nextPath.startsWith("/staff");
   return nextPath.startsWith("/guest");
 }

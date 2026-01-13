@@ -57,6 +57,10 @@ public class EmployeeService {
         repo.deleteById(id);
     }
 
+    public List<String> getPositions() {
+        return repo.findDistinctPositions();
+    }
+
     private EmployeeResponse toResponse(Employee e) {
         return new EmployeeResponse(
                 e.getId(),
