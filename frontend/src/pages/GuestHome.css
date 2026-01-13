@@ -208,6 +208,19 @@
   cursor: not-allowed;
 }
 
+.doc-value {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.doc-value .btn-small {
+  margin-left: auto;
+  padding: 5px 8px;
+  font-size: 12px;
+  border-radius: 10px;
+}
 
 .data-list {
   display: grid;
@@ -417,5 +430,11 @@
 
 .confirm-actions {
   justify-content: flex-end;
+  gap: 10px;
+}
+
+.doc-value {
+  display: flex;
+  align-items: center;
   gap: 10px;
 }

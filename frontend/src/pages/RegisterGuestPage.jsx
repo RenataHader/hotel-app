@@ -19,6 +19,11 @@ export default function RegisterGuestPage() {
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
 
+  const [password2, setPassword2] = useState("");
+  const [showDoc, setShowDoc] = useState(false);
+
+  const [showPass1, setShowPass1] = useState(false);
+  const [showPass2, setShowPass2] = useState(false);
 
   const [fieldErrors, setFieldErrors] = useState({});
 
@@ -41,6 +46,11 @@ export default function RegisterGuestPage() {
     setErr("");
     setOk("");
     setFieldErrors({});
+
+    if (form.password !== password2) {
+      setErr("Hasła nie są identyczne.");
+      return;
+    }
 
     try {
       await registerGuest(form);
@@ -91,16 +101,55 @@ export default function RegisterGuestPage() {
           <div className="field">
             <label>
               Hasło
-              <input
-                className={`input ${fieldErrors.password ? "input--error" : ""}`}
-                value={form.password}
-                onChange={(e) => setField("password", e.target.value)}
-                type="password"
-                autoComplete="new-password"
-                required
-              />
+              <div className="pass-field">
+                <input
+                  className={`input ${fieldErrors.password ? "input--error" : ""}`}
+                  value={form.password}
+                  onChange={(e) => setField("password", e.target.value)}
+                  type={showPass1 ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="btn-small pass-btn"
+                  onClick={() => setShowPass1((v) => !v)}
+                >
+                  {showPass1 ? "Ukryj" : "Pokaż"}
+                </button>
+              </div>
             </label>
             {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
+          </div>
+
+          <div className="field">
+            <label>
+              Powtórz hasło
+              <div className="pass-field">
+                <input
+                  className={`input ${err === "Hasła nie są identyczne." ? "input--error" : ""}`}
+                  value={password2}
+                  onChange={(e) => {
+                    setPassword2(e.target.value);
+                    if (err) setErr("");
+                    if (ok) setOk("");
+                  }}
+                  type={showPass2 ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="btn-small pass-btn"
+                  onClick={() => setShowPass2((v) => !v)}
+                >
+                  {showPass2 ? "Ukryj" : "Pokaż"}
+                </button>
+              </div>
+            </label>
+            {err === "Hasła nie są identyczne." && (
+              <div className="field-error">Hasła nie są identyczne.</div>
+            )}
           </div>
 
           <div className="grid-2">
@@ -152,20 +201,31 @@ export default function RegisterGuestPage() {
           <div className="field">
             <label>
               Numer dokumentu
-              <input
-                className={`input ${fieldErrors.documentNumber ? "input--error" : ""}`}
-                value={form.documentNumber}
-                onChange={(e) => setField("documentNumber", e.target.value.toUpperCase())}
-                autoCapitalize="characters"
-                placeholder="np. ABC123456"
-                required
-              />
+              <div className="doc-field">
+                <input
+                  className={`input ${fieldErrors.documentNumber ? "input--error" : ""}`}
+                  value={form.documentNumber}
+                  onChange={(e) => setField("documentNumber", e.target.value.toUpperCase())}
+                  autoCapitalize="characters"
+                  placeholder="np. ABC123456"
+                  type={showDoc ? "text" : "password"}
+                  required
+                />
+
+                <button
+                  type="button"
+                  className="btn-small doc-btn"
+                  onClick={() => setShowDoc((v) => !v)}
+                >
+                  {showDoc ? "Ukryj" : "Pokaż"}
+                </button>
+              </div>
             </label>
+
             {fieldErrors.documentNumber && <div className="field-error">{fieldErrors.documentNumber}</div>}
           </div>
-
-
-          {err && <div className="error">{err}</div>}
+          
+          {err && err !== "Hasła nie są identyczne." && <div className="error">{err}</div>}
           {ok && <div className="success">{ok}</div>}
 
           <button className="btn" type="submit">

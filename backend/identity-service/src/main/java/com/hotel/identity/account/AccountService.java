@@ -2,6 +2,7 @@ package com.hotel.identity.account;
 
 import com.hotel.identity.auth.OperationsClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AccountService {
@@ -12,6 +13,12 @@ public class AccountService {
     public AccountService(AccountRepository repo, OperationsClient operationsClient) {
         this.repo = repo;
         this.operationsClient = operationsClient;
+    }
+
+    @Transactional
+    public void deleteByEmployeeId(Integer employeeId) {
+        if (employeeId == null) return;
+        repo.deleteByEmployeeId(employeeId);
     }
 
     public AccountResponse getByEmail(String email) {
@@ -43,4 +50,5 @@ public class AccountService {
                 position
         );
     }
+
 }

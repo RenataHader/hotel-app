@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -53,5 +55,9 @@ public class RoomController {
         return roomService.getRoomTypes(hotelId);
     }
 
-
+    @PatchMapping("/{id}/inactive")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deactivateRoom(@PathVariable Integer id) {
+        roomService.deactivateRoom(id);
+    }
 }

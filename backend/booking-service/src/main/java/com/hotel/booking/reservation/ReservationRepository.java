@@ -42,6 +42,17 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
             @Param("to") LocalDate to
     );
 
+    @Query("""
+    SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END
+    FROM Reservation r
+    LEFT JOIN r.roomIds rid
+    WHERE (rid = :roomId OR r.roomId = :roomId)
+      AND r.status <> com.hotel.booking.reservation.ReservationStatus.CANCELLED
+      AND r.checkOutDate > :from
+    """)
+    boolean existsFutureForRoom(@Param("roomId") Integer roomId,
+                                @Param("from") LocalDate from);
+
 
     Page<Reservation> findAllByGuest_Id(Integer guestId, Pageable pageable);
     Page<Reservation> findAllByHotelId(Integer hotelId, Pageable pageable);

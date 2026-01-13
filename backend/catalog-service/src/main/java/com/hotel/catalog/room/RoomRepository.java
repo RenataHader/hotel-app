@@ -21,4 +21,9 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
 
     boolean existsByHotel_IdAndRoomNumber(Integer hotelId, String roomNumber);
 
+    List<Room> findAllByStatusIgnoreCase(String status);
+    List<Room> findAllByHotel_IdAndStatusIgnoreCase(Integer hotelId, String status);
+    List<Room> findAllByHotel_IdAndIdNotInAndStatusIgnoreCase(Integer hotelId, List<Integer> ids, String status);
+    List<Room> findAllByHotel_IdAndTypeIgnoreCaseAndStatusIgnoreCase(Integer hotelId, String type, String status);
+
 }

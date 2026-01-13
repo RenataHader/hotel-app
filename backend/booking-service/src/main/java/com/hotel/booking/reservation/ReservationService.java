@@ -242,7 +242,7 @@ public class ReservationService {
                     .amount(saved.getPrice())
                     .paymentDate(LocalDateTime.now())
                     .paymentMethod("ONLINE")
-                    .status("PENDING")
+                    .status("PAID")
                     .build();
 
             paymentRepo.save(payment);

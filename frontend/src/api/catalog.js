@@ -50,3 +50,7 @@ export async function getRoomTypes(hotelId) {
   });
   return Array.isArray(data) ? data : [];
 }
+
+export async function deactivateRoom(roomId) {
+  await http.patch(`/catalog/api/rooms/${roomId}/inactive`);
+}

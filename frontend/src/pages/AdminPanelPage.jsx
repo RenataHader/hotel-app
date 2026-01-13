@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/panelCommon.css";
 
-import { getHotels, getRooms, getRoomTypes, createRoom } from "../api/catalog";
+import { getHotels, getRooms, getRoomTypes, createRoom, deactivateRoom } from "../api/catalog";
 import { getAllReservations } from "../api/booking";
 import { createEmployee, getEmployees, getEmployeePositions } from "../api/operations";
 import { registerEmployee } from "../api/auth";
@@ -70,6 +70,11 @@ export default function AdminPanelPage() {
 
   const [employeeHotelFilter, setEmployeeHotelFilter] = useState("");
   const [employeePositionFilter, setEmployeePositionFilter] = useState("");
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  const [roomToDeactivate, setRoomToDeactivate] = useState(null);
+
 
   const [form, setForm] = useState({
     firstName: "",
@@ -228,6 +233,18 @@ export default function AdminPanelPage() {
     setErr("");
   }
 
+  function openDeactivateConfirm(room) {
+    setErr("");
+    setOk("");
+    setRoomToDeactivate(room);
+    setConfirmOpen(true);
+  }
+
+  function closeDeactivateConfirm() {
+    if (confirmBusy) return;
+    setConfirmOpen(false);
+    setRoomToDeactivate(null);
+  }
 
   async function registerWithAutoEmail({
     employeeId,
@@ -795,6 +812,7 @@ export default function AdminPanelPage() {
                           <th>Typ</th>
                           <th>Łóżka</th>
                           <th>Cena</th>
+                          <th>Akcje</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -806,6 +824,16 @@ export default function AdminPanelPage() {
                             <td><span className="pill">{room.type}</span></td>
                             <td>{room.numberOfBeds}</td>
                             <td>{room.price}</td>
+
+                            <td>
+                              <button
+                                className="panel-btn ghost"
+                                type="button"
+                                onClick={() => openDeactivateConfirm(room)}
+                              >
+                                Usuń
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -1095,6 +1123,70 @@ export default function AdminPanelPage() {
           </div>
         )}
 
+        {confirmOpen && roomToDeactivate && (
+          <div className="modal-backdrop" onMouseDown={closeDeactivateConfirm}>
+            <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
+              <div className="modal-head">
+                <h3 className="modal-title">Potwierdź usunięcie</h3>
+                <button
+                  className="modal-close"
+                  type="button"
+                  onClick={closeDeactivateConfirm}
+                  aria-label="Zamknij"
+                  disabled={confirmBusy}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div style={{ marginTop: 10, opacity: 0.95 }}>
+                Czy na pewno chcesz dezaktywować pokój{" "}
+                <b>{roomToDeactivate.roomNumber}</b> w hotelu{" "}
+                <b>{roomToDeactivate.hotelName || hotelsById.get(roomToDeactivate.hotelId) || roomToDeactivate.hotelId}</b>?
+              </div>
+
+              <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+                Pokój zniknie z listy i nie będzie możliwy do rezerwacji.
+              </div>
+
+              {err && <div className="panel-error" style={{ marginTop: 12 }}>{err}</div>}
+
+              <div className="modal-actions" style={{ marginTop: 14 }}>
+                <button
+                  className="panel-btn ghost"
+                  type="button"
+                  onClick={closeDeactivateConfirm}
+                  disabled={confirmBusy}
+                >
+                  Anuluj
+                </button>
+
+                <button
+                  className="panel-btn danger"
+                  type="button"
+                  disabled={confirmBusy}
+                  onClick={async () => {
+                    setConfirmBusy(true);
+                    setErr("");
+                    setOk("");
+                    try {
+                      await deactivateRoom(roomToDeactivate.id);
+                      setOk("Pokój dezaktywowany.");
+                      closeDeactivateConfirm();
+                      await loadAll();
+                    } catch (e) {
+                      setErr(e?.response?.data?.message || "Nie udało się dezaktywować pokoju.");
+                    } finally {
+                      setConfirmBusy(false);
+                    }
+                  }}
+                >
+                  {confirmBusy ? "Usuwam..." : "Tak, usuń"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

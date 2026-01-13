@@ -20,12 +20,13 @@ public class RoomService {
     private final RoomRepository roomRepo;
     private final HotelRepository hotelRepo;
     private final RestTemplate restTemplate;
+    private final BookingClient bookingClient;
 
     @Value("${app.services.booking.base-url:http://localhost:8081}")
     private String bookingBaseUrl;
 
     public List<RoomResponse> getAllRooms() {
-        return roomRepo.findAll().stream()
+        return roomRepo.findAllByStatusIgnoreCase("AVAILABLE").stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -46,8 +47,8 @@ public class RoomService {
         }
 
         List<Room> availableRooms = reservedIds.isEmpty()
-                ? roomRepo.findAllByHotel_Id(hotelId)
-                : roomRepo.findAllByHotel_IdAndIdNotIn(hotelId, reservedIds);
+                ? roomRepo.findAllByHotel_IdAndStatusIgnoreCase(hotelId, "AVAILABLE")
+                : roomRepo.findAllByHotel_IdAndIdNotInAndStatusIgnoreCase(hotelId, reservedIds, "AVAILABLE");
 
         return availableRooms.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
@@ -87,8 +88,8 @@ public class RoomService {
 
     public List<RoomResponse> searchRooms(Integer hotelId, String type) {
         List<Room> rooms = (type == null || type.isBlank())
-                ? roomRepo.findAllByHotel_Id(hotelId)
-                : roomRepo.findAllByHotel_IdAndTypeIgnoreCase(hotelId, type);
+                ? roomRepo.findAllByHotel_IdAndStatusIgnoreCase(hotelId, "AVAILABLE")
+                : roomRepo.findAllByHotel_IdAndTypeIgnoreCaseAndStatusIgnoreCase(hotelId, type, "AVAILABLE");
 
         return rooms.stream().map(this::mapToResponse).toList();
     }
@@ -104,6 +105,23 @@ public class RoomService {
                 .toList();
     }
 
+    public void deactivateRoom(Integer roomId) {
+        Room room = roomRepo.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        if ("INACTIVE".equalsIgnoreCase(room.getStatus())) return;
+
+        boolean hasFuture = bookingClient.hasFutureReservations(roomId, LocalDate.now());
+        if (hasFuture) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Nie można dezaktywować pokoju – ma przyszłe rezerwacje."
+            );
+        }
+
+        room.setStatus("INACTIVE");
+        roomRepo.save(room);
+    }
 
     private RoomResponse mapToResponse(Room room) {
         return RoomResponse.builder()

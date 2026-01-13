@@ -64,6 +64,15 @@ function moneyPLN(v) {
   return String(v);
 }
 
+function maskDocumentNumber(v) {
+  if (!v) return "—";
+  const s = String(v);
+  const keep = 3;
+  if (s.length <= keep) return "•".repeat(s.length);
+  return "•".repeat(s.length - keep) + s.slice(-keep);
+}
+
+
 function ReservationDetailsModal({ reservation, hotels, onClose, onCancel }) {
   const panelRef = useRef(null);
 
@@ -339,6 +348,8 @@ export default function GuestHome() {
   const [canceling, setCanceling] = useState(false);
   const [cancelErr, setCancelErr] = useState("");
 
+  const [showDocumentNumber, setShowDocumentNumber] = useState(false);
+
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -396,6 +407,7 @@ export default function GuestHome() {
   }
 
   async function loadGuestProfile() {
+    setShowDocumentNumber(false);
     setProfileErr("");
     setProfileLoading(true);
     try {
@@ -546,6 +558,7 @@ export default function GuestHome() {
                         onClick={() => {
                           setOpen(false);
                           setPanel("profile");
+                          setShowDocumentNumber(false);
                         }}
                       >
                         Moje dane
@@ -687,7 +700,25 @@ export default function GuestHome() {
 
                   <div className="data-row">
                     <span className="data-label">Numer dokumentu</span>
-                    <b className="data-value">{guestProfile?.documentNumber || "—"}</b>
+
+                    <div className="doc-value">
+                      <b className="data-value">
+                        {showDocumentNumber
+                          ? (guestProfile?.documentNumber || "—")
+                          : maskDocumentNumber(guestProfile?.documentNumber)}
+                      </b>
+
+                      {guestProfile?.documentNumber ? (
+                        <button
+                          type="button"
+                          className="btn-small"
+                          onClick={() => setShowDocumentNumber((v) => !v)}
+                          aria-label={showDocumentNumber ? "Ukryj numer dokumentu" : "Pokaż numer dokumentu"}
+                        >
+                          {showDocumentNumber ? "Ukryj" : "Pokaż"}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="section-title">Dane kontaktowe:</div>

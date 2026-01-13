@@ -85,4 +85,12 @@ public class ReservationController {
     ) {
         return reservationService.getHotelReservationsPage(page, size);
     }
+    @GetMapping("/rooms/{roomId}/has-future")
+    public boolean hasFuture(
+            @PathVariable Integer roomId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from
+    ) {
+        return reservationRepo.existsFutureForRoom(roomId, from);
+    }
+
 }
