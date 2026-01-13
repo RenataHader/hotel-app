@@ -1,0 +1,58 @@
+.rooms-page {
+  padding: 24px;
+}
+
+.rooms-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  margin-top: 20px;
+}
+
+.room-type-card {
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: transform 0.2s ease;
+}
+
+.room-type-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(165, 180, 252, 0.4);
+}
+
+.room-image-placeholder {
+  height: 200px;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: bold;
+}
+
+.room-info {
+  padding: 18px;
+}
+
+.room-info h3 {
+  margin: 0 0 10px;
+  color: #a5b4fc;
+}
+
+.room-description {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+  margin-bottom: 16px;
+  min-height: 45px;
+}
+
+.room-meta {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 12px;
+  font-size: 14px;
+}

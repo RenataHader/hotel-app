@@ -3,6 +3,7 @@ import BackgroundRotator from "./components/BackgroundRotator";
 
 import HotelSelectPage from "./pages/HotelSelectPage";
 import ReservationSearchPage from "./pages/ReservationSearchPage";
+import RoomsPage from "./pages/RoomsPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterGuestPage from "./pages/RegisterGuestPage";
@@ -30,6 +31,7 @@ export default function App() {
 
           <Route element={<AppLayout />}>
             <Route path="/search" element={<ReservationSearchPage />} />
+            <Route path="/rooms" element={<RoomsPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterGuestPage />} />

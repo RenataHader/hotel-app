@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { getMeals, getServices, getRooms } from "../api/catalog";
+import { groupRooms } from "../utils/groupRooms";
 import "./TopBar.css";
 
 function isoToday() {
@@ -35,6 +37,10 @@ export default function TopBar({
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
+  const [showPriceList, setShowPriceList] = useState(false);
+  const [priceListData, setPriceListData] = useState({ meals: [], services: [], roomGroups: [] });
+  const [loadingPrices, setLoadingPrices] = useState(false);
+
   const today = useMemo(() => isoToday(), []);
 
   useEffect(() => {
@@ -45,6 +51,23 @@ export default function TopBar({
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
+
+  const openPriceList = async () => {
+    setShowPriceList(true);
+    setLoadingPrices(true);
+    try {
+      const [m, s, r] = await Promise.all([getMeals(), getServices(), getRooms()]);
+      
+      const hotelRooms = r.filter(room => String(room.hotelId) === String(selectedHotelId));
+      const roomGroups = groupRooms(hotelRooms);
+      
+      setPriceListData({ meals: m, services: s, roomGroups });
+    } catch (err) {
+      console.error("Błąd ładowania cennika:", err);
+    } finally {
+      setLoadingPrices(false);
+    }
+  };
 
   return (
     <header className="topbar">
@@ -88,14 +111,11 @@ export default function TopBar({
               min={today}
               onChange={(e) => {
                 const v = e.target.value;
-
                 setSearch((s) => {
                   const next = { ...s, from: v };
-
                   if (next.to && v && next.to < v) {
                     next.to = v;
                   }
-
                   return next;
                 });
               }}
@@ -128,9 +148,19 @@ export default function TopBar({
             />
           </label>
 
-          <button className="search-btn" type="submit">
-            Szukaj
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="search-btn" type="submit">
+              Szukaj
+            </button>
+            
+            <button className="search-btn" type="button" onClick={openPriceList} style={{ background: 'rgba(26, 143, 151, 0.87)', border: '1px solid rgba(255,255,255,0.2)' }}>
+              Cennik
+            </button>
+
+            <button className="search-btn" type="button" onClick={() => nav("/rooms")} style={{ background: 'rgba(26, 143, 151, 0.87)', border: '1px solid rgba(255,255,255,0.2)' }}>
+              Pokoje
+            </button>
+          </div>
         </form>
 
         <div className="right" ref={menuRef}>
@@ -153,37 +183,37 @@ export default function TopBar({
                   </div>
 
                   <button
-                        className="dropdown-item"
-                        type="button"
-                        onClick={() => {
-                          setOpen(false);
-                          nav("/guest");
-                        }}
-                      >
-                        Moje dane
-                      </button>
+                    className="dropdown-item"
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      nav("/guest");
+                    }}
+                  >
+                    Moje dane
+                  </button>
 
-                      <button
-                        className="dropdown-item"
-                        type="button"
-                        onClick={() => {
-                          setOpen(false);
-                          nav("/guest");
-                        }}
-                      >
-                        Moje rezerwacje
-                      </button>
+                  <button
+                    className="dropdown-item"
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      nav("/guest");
+                    }}
+                  >
+                    Moje rezerwacje
+                  </button>
 
-                      <button
-                        className="dropdown-item"
-                        type="button"
-                        onClick={() => {
-                          setOpen(false);
-                          nav("/search");
-                        }}
-                      >
-                        Nowa rezerwacja
-                      </button>
+                  <button
+                    className="dropdown-item"
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      nav("/search");
+                    }}
+                  >
+                    Nowa rezerwacja
+                  </button>
 
                   <div className="dropdown-sep" />
 
@@ -202,7 +232,6 @@ export default function TopBar({
               ) : (
                 <>
                   <div className="dropdown-head">Nie jesteś zalogowany/a</div>
-
                   <Link className="dropdown-link" to="/login" onClick={() => setOpen(false)}>
                     Zaloguj się
                   </Link>
@@ -215,6 +244,65 @@ export default function TopBar({
           )}
         </div>
       </div>
+
+      {showPriceList && (
+        <div className="modal-backdrop" onClick={() => setShowPriceList(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ width: 'min(700px, 95%)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="modal-head">
+              <h3 className="modal-title">Cennik usług i pokoi</h3>
+              <button className="modal-close" onClick={() => setShowPriceList(false)}>×</button>
+            </div>
+            
+            {loadingPrices ? (
+              <div style={{ padding: '20px', textAlign: 'center' }}>Ładowanie danych cennika...</div>
+            ) : (
+              <div style={{ overflowY: 'auto', padding: '10px' }}>
+                <div className="modal-grid">
+                  <div className="modal-box">
+                    <h4 className="panel-h3" style={{ color: '#a5b4fc', marginBottom: '12px' }}>Standard pokoi (za noc)</h4>
+                    <div className="kv">
+                      {priceListData.roomGroups.length > 0 ? priceListData.roomGroups.map(g => (
+                        <div key={g.key} className="kv-row">
+                          <span>{g.type} ({g.beds} os.)</span>
+                          <b>{g.price} PLN</b>
+                        </div>
+                      )) : <div className="muted">Brak danych o pokojach.</div>}
+                    </div>
+                  </div>
+
+                  <div className="modal-box">
+                    <h4 className="panel-h3" style={{ color: '#a5b4fc', marginBottom: '12px' }}>Wyżywienie (os./doba)</h4>
+                    <div className="kv">
+                      {priceListData.meals.map(m => (
+                        <div key={m.id} className="kv-row">
+                          <span>{m.type}</span>
+                          <b>{m.price} PLN</b>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="modal-box" style={{ gridColumn: '1 / -1' }}>
+                    <h4 className="panel-h3" style={{ color: '#a5b4fc', marginBottom: '12px' }}>Usługi dodatkowe</h4>
+                    <div className="kv" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '8px' }}>
+                      {priceListData.services.map(s => (
+                        <div key={s.id} className="kv-row">
+                          <span style={{ fontSize: '14px' }}>{s.name}</span>
+                          <b>{s.price} PLN</b>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="modal-actions" style={{ marginTop: '16px' }}>
+              <button className="panel-btn" onClick={() => setShowPriceList(false)}>Zamknij</button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
