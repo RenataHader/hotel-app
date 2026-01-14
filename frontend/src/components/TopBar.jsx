@@ -111,11 +111,15 @@ export default function TopBar({
               min={today}
               onChange={(e) => {
                 const v = e.target.value;
+
                 setSearch((s) => {
                   const next = { ...s, from: v };
-                  if (next.to && v && next.to < v) {
-                    next.to = v;
+                  const minTo = v ? addDaysIso(v, 1) : addDaysIso(today, 1);
+
+                  if (!next.to || (v && next.to <= v)) {
+                    next.to = minTo;
                   }
+
                   return next;
                 });
               }}

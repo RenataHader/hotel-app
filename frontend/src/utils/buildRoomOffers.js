@@ -51,6 +51,7 @@ function buildOffer(parts, guestCount) {
       type: p.group.type,
       beds: p.group.beds,
       price: p.group.price,
+      description: p.group.description,
       qty: p.qty,
     })),
     title:

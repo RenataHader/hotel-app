@@ -11,7 +11,6 @@ function toNumberMaybe(v) {
   return Number.isFinite(n) ? n : NaN;
 }
 
-
 export function groupRooms(rooms) {
   const map = new Map();
 
@@ -20,7 +19,7 @@ export function groupRooms(rooms) {
     const type = pick(r, ["type"], "");
     const beds = pick(r, ["numberOfBeds"], null);
     const price = pick(r, ["pricePerNight", "price"], null);
-
+    const description = pick(r, ["description", "desc"], "");
     const key = [hotelId, type, beds, String(price)].join("|");
 
     if (!map.has(key)) {
@@ -30,6 +29,7 @@ export function groupRooms(rooms) {
         type,
         beds,
         price,
+        description: description || "",
         count: 0,
         roomIds: [],
         sampleRoomNumbers: [],
@@ -38,6 +38,8 @@ export function groupRooms(rooms) {
 
     const g = map.get(key);
     g.count += 1;
+
+    if (!g.description && description) g.description = description;
 
     if (r.id !== undefined && r.id !== null) g.roomIds.push(r.id);
     if (r.roomNumber && g.sampleRoomNumbers.length < 3) g.sampleRoomNumbers.push(r.roomNumber);

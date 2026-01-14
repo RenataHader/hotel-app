@@ -72,9 +72,31 @@ export default function ReservationSearchPage() {
                 </div>
 
                 <div className="offer-meta">
-                  Pokoje: <b>{o.roomsCount}</b> • Łóżka: <b>{o.totalBeds}</b> • Dostępne pakiety:{" "}
-                  <b>{o.availability}</b>
+                  Pokoje: <b>{o.roomsCount}</b> • Łóżka: <b>{o.totalBeds}</b>
                 </div>
+
+                {Array.isArray(o.parts) && o.parts.some((p) => String(p?.description || "").trim()) && (
+                  <div className="offer-desc">
+                    {o.parts.length === 1 ? (
+                      <div className="offer-desc-line">{o.parts[0].description}</div>
+                    ) : (
+                      <ul>
+                        {o.parts
+                          .filter((p) => String(p?.description || "").trim())
+                          .map((p, idx) => (
+                            <li key={idx}>
+                              <b>
+                                {p.type || "Pokój"}
+                                {p.qty > 1 ? ` x${p.qty}` : ""}
+                              </b>
+                              {": "}
+                              {p.description}
+                            </li>
+                          ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
 
                 <div className="offer-select">
                   <span className="chip chip--ghost">Wybierz</span>

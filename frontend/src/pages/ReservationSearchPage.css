@@ -12,7 +12,6 @@
   font-size: 14px;
 }
 
-
 .offers {
   display: grid;
   gap: 12px;
@@ -21,7 +20,6 @@
   margin-right: 14px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
-
 
 @media (max-width: 1100px) {
   .offers {
@@ -44,7 +42,7 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(15px);
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255);
 
   transition: transform 120ms ease, filter 120ms ease, border-color 120ms ease;
 }
@@ -54,7 +52,6 @@
   transform: translateY(-1px);
   border-color: rgba(99, 102, 241, 0.65);
 }
-
 
 .offer-card.is-selected {
   border-color: rgba(99, 102, 241, 0.95);
@@ -84,14 +81,39 @@
 .offer-meta {
   margin-top: 6px;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.85);
 }
 
+.offer-desc {
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 1.25;
+  color: rgba(255, 255, 255);
+  overflow: hidden;
+}
+
+.offer-desc-line {
+  display: -webkit-box;
+  line-clamp: 3;       
+  -webkit-line-clamp: 3; 
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+
+.offer-desc ul {
+  margin: 6px 0 0 18px;
+  padding: 0;
+}
+
+.offer-desc li {
+  margin: 2px 0;
+}
 
 .offer-rooms {
   margin-top: 10px;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255);
 }
 
 .offer-rooms ul {
@@ -109,7 +131,6 @@
   justify-content: flex-end;
   margin-top: 10px;
 }
-
 
 .chip {
   padding: 6px 10px;
@@ -134,7 +155,6 @@
 .pager-bottom {
   margin-top: 12px;
 }
-
 
 .pager {
   display: flex;
@@ -174,6 +194,6 @@
   padding: 0 4px;
 }
 
-.glass-card{
+.glass-card {
   margin-left: 15px;
 }

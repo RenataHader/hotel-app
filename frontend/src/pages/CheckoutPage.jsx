@@ -108,6 +108,20 @@ export default function CheckoutPage() {
     };
   }, [selection, roomIds]);
 
+  const roomDescriptions = useMemo(() => {
+    const parts = selection?.offer?.parts;
+    if (!Array.isArray(parts) || parts.length === 0) return [];
+
+    return parts
+      .map((p) => ({
+        type: p?.type || "Pokój",
+        qty: Number(p?.qty || 1),
+        description: String(p?.description || "").trim(),
+      }))
+      .filter((x) => x.description.length > 0);
+  }, [selection]);
+
+
   useEffect(() => {
     if (!selection) return;
 
@@ -264,18 +278,44 @@ export default function CheckoutPage() {
 
         {err ? <div className="error">{err}</div> : null}
 
-        <div className="summary">
-          <div>
-            <b>{summary.title}</b> • {summary.beds} łóżka • pokoje w pakiecie: <b>{summary.roomsCount}</b>
+          <div className="summary">
+            <div>
+              <b>{summary.title}</b>
+            </div>
+
+            {roomDescriptions.length > 0 && (
+              <div className="summary-rooms">
+                {roomDescriptions.length === 1 ? (
+                  <div className="summary-room-desc">{roomDescriptions[0].description}</div>
+                ) : (
+                  <ul className="summary-room-list">
+                    {roomDescriptions.map((r, idx) => (
+                      <li key={idx}>
+                        <b>
+                          {r.type}
+                          {r.qty > 1 ? ` x${r.qty}` : ""}
+                        </b>
+                        {": "}
+                        {r.description}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {roomDescriptions.length > 0 && <div className="summary-sep" />}
+
+            <div className="muted">
+              Termin: <b>{selection.checkInDate}</b> → <b>{selection.checkOutDate}</b> • Liczba osób:{" "}
+              <b>{selection.guestCount}</b>
+            </div>
+
+            <div className="muted">
+              Cena bazowa: <b>{String(summary.basePrice)} PLN</b> za noc
+            </div>
           </div>
-          <div className="muted">
-            Termin: <b>{selection.checkInDate}</b> → <b>{selection.checkOutDate}</b> • Liczba osób:{" "}
-            <b>{selection.guestCount}</b>
-          </div>
-          <div className="muted">
-            Cena bazowa: <b>{String(summary.basePrice)} PLN</b> za noc
-          </div>
-        </div>
+
 
         <div className="grid">
           <div className="box">
