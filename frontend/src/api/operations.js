@@ -38,3 +38,36 @@ export async function getEmployeePositions() {
   });
   return Array.isArray(data) ? data : [];
 }
+
+export async function deleteEmployee(employeeId) {
+  await http.delete(`/operations/employees/${employeeId}`, {
+    headers: { Accept: "application/json" },
+  });
+}
+
+export async function getMaintenance() {
+  const { data } = await http.get("/operations/maintenance", {
+    headers: { Accept: "application/json" },
+  });
+  return Array.isArray(data) ? data : [];
+}
+
+export async function createMaintenance(payload) {
+  const { data } = await http.post("/operations/maintenance", payload, {
+    headers: { "Content-Type": "application/json" },
+  });
+  return data;
+}
+
+export async function updateMaintenance(id, payload) {
+  const { data } = await http.put(`/operations/maintenance/${id}`, payload, {
+    headers: { "Content-Type": "application/json" },
+  });
+  return data;
+}
+
+export async function deleteMaintenance(id) {
+  await http.delete(`/operations/maintenance/${id}`, {
+    headers: { Accept: "application/json" },
+  });
+}

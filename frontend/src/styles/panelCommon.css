@@ -139,7 +139,7 @@
 
   padding: 4px 8px;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 900;
 
   color: rgba(255, 255, 255, 0.92);
@@ -261,7 +261,6 @@
 .avatar {
   font-size: 18px;
 }
-
 
 .dropdown {
   position: absolute;
@@ -465,4 +464,10 @@
 }
 .panel-btn.danger:hover{
   background: rgba(239,68,68,0.18);
+}
+.panel-btn.sm {
+  padding: 6px 10px;
+  font-size: 15px;
+  line-height: 1.1;
+  border-radius: 10px;
 }

@@ -72,6 +72,10 @@ function maskDocumentNumber(v) {
   return "•".repeat(s.length - keep) + s.slice(-keep);
 }
 
+function reservationFromISO(r) {
+  const v = pickField(r, ["checkInDate", "from", "startDate", "dateFrom"], "");
+  return shortDate(v);
+}
 
 function ReservationDetailsModal({ reservation, hotels, onClose, onCancel }) {
   const panelRef = useRef(null);
@@ -353,9 +357,48 @@ export default function GuestHome() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
+  const [statusFilter, setStatusFilter] = useState("ALL");
+
   useEffect(() => {
     if (!user) nav("/login");
   }, [user]);
+
+  const statusOptions = useMemo(() => {
+    const set = new Set();
+    for (const r of reservations) {
+      const s = String(pickField(r, ["status", "state"], "") || "").toUpperCase();
+      if (s) set.add(s);
+    }
+    return ["ALL", ...Array.from(set).sort()];
+  }, [reservations]);
+
+  const visibleReservations = useMemo(() => {
+    const filtered = reservations.filter((r) => {
+      if (statusFilter === "ALL") return true;
+      const s = String(pickField(r, ["status", "state"], "") || "").toUpperCase();
+      return s === statusFilter;
+    });
+
+    const withMeta = filtered.map((r, idx) => {
+      const status = String(pickField(r, ["status", "state"], "") || "").toUpperCase();
+
+      const fromISO = reservationFromISO(r);
+      const fromDate = parseISOToUTC(fromISO);
+      const time = fromDate ? fromDate.getTime() : Number.POSITIVE_INFINITY;
+
+      const isCancelled = status === "CANCELLED" || status === "CANCELED";
+
+      return { r, idx, time, isCancelled };
+    });
+
+    withMeta.sort((a, b) => {
+      if (a.isCancelled !== b.isCancelled) return a.isCancelled ? 1 : -1;
+      if (a.time !== b.time) return a.time - b.time;
+      return a.idx - b.idx;
+    });
+
+    return withMeta.map((x) => x.r);
+  }, [reservations, statusFilter]);
 
   useEffect(() => {
     function onDocDown(e) {
@@ -440,6 +483,7 @@ export default function GuestHome() {
 
   useEffect(() => {
     if (user) {
+      setStatusFilter("ALL");
       loadReservations();
       loadHotels();
       loadGuestProfile();
@@ -625,6 +669,31 @@ export default function GuestHome() {
           <section className="guest-section">
             <div className="section-head">
               <h2 className="section-title">Moje rezerwacje</h2>
+
+              {!loading && !err && reservations.length > 0 && (
+                <div className="filters">
+                  <label className="filter-label">
+                    Status:
+                    <select
+                      className="filter-select"
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      {statusOptions.map((s) => (
+                        <option key={s} value={s}>
+                          {s === "ALL" ? "Wszystkie" : s}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  {statusFilter !== "ALL" && (
+                    <button type="button" className="btn-small" onClick={() => setStatusFilter("ALL")}>
+                      Wyczyść
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {err && <div className="error">{err}</div>}
@@ -636,7 +705,7 @@ export default function GuestHome() {
 
             {!loading && !err && reservations.length > 0 && (
               <div className="reserv-grid">
-                {reservations.map((r, idx) => {
+                {visibleReservations.map((r, idx) => {
                   const meta = prettyReservation(r);
                   const key = meta.id !== "?" ? String(meta.id) : `row-${idx}`;
 

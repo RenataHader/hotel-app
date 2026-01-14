@@ -30,4 +30,10 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest req) {
         return ResponseEntity.ok(service.login(req));
     }
+
+    @DeleteMapping("/employees/{employeeId}")
+    public ResponseEntity<Void> deleteEmployeeAccount(@PathVariable int employeeId) {
+        service.deleteEmployeeAccount(employeeId);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -4,7 +4,7 @@ import "../styles/panelCommon.css";
 
 import { getHotels, getRooms, getRoomTypes, createRoom, deactivateRoom } from "../api/catalog";
 import { getAllReservations } from "../api/booking";
-import { createEmployee, getEmployees, getEmployeePositions } from "../api/operations";
+import { createEmployee, getEmployees, getEmployeePositions, deleteEmployee } from "../api/operations";
 import { registerEmployee } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
 
@@ -37,7 +37,6 @@ const RE_POSITION = /^[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż ]+$/;
 const RE_PHONE_9 = /^\d{9}$/;
 
 function isValidEmail(email) {
-  // prosta, praktyczna walidacja (wystarczy na frontend)
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
 }
 
@@ -63,7 +62,9 @@ export default function AdminPanelPage() {
   const menuRef = useRef(null);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
+
+  const [empFormBusy, setEmpFormBusy] = useState(false);
+  const [roomFormBusy, setRoomFormBusy] = useState(false);
 
   const [hotelFilter, setHotelFilter] = useState("");
   const [positions, setPositions] = useState([]);
@@ -75,6 +76,9 @@ export default function AdminPanelPage() {
   const [confirmBusy, setConfirmBusy] = useState(false);
   const [roomToDeactivate, setRoomToDeactivate] = useState(null);
 
+  const [empConfirmOpen, setEmpConfirmOpen] = useState(false);
+  const [empConfirmBusy, setEmpConfirmBusy] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState(null);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -182,12 +186,10 @@ export default function AdminPanelPage() {
       setPositions(list);
 
       setForm((f) => {
-        // jeśli lista pustych stanowisk -> wymuś tryb "wpisz ręcznie"
         if (list.length === 0) {
           return { ...f, useCustomPosition: true, position: "" };
         }
 
-        // jeśli lista niepusta -> dopasuj position do listy
         const current = f.position || "";
         const exists = current && list.includes(current);
         return { ...f, useCustomPosition: false, position: exists ? current : (list[0] || "") };
@@ -233,6 +235,21 @@ export default function AdminPanelPage() {
     setErr("");
   }
 
+  function openEmployeeDeleteConfirm(emp) {
+    setErr("");
+    setOk("");
+    setEmployeeToDelete(emp);
+    setEmpConfirmOpen(true);
+  }
+
+  function closeEmployeeDeleteConfirm() {
+    if (empConfirmBusy) return;
+    setEmpConfirmOpen(false);
+    setEmployeeToDelete(null);
+    setErr("");
+    setOk("");
+  }
+
   function openDeactivateConfirm(room) {
     setErr("");
     setOk("");
@@ -244,6 +261,8 @@ export default function AdminPanelPage() {
     if (confirmBusy) return;
     setConfirmOpen(false);
     setRoomToDeactivate(null);
+    setErr("");
+    setOk("");
   }
 
   async function registerWithAutoEmail({
@@ -333,7 +352,7 @@ export default function AdminPanelPage() {
       return;
     }
 
-    setBusy(true);
+    setEmpFormBusy(true);
 
     try {
       const emp = await createEmployee({
@@ -382,7 +401,7 @@ export default function AdminPanelPage() {
           "Nie udało się utworzyć pracownika/konta."
       );
     } finally {
-      setBusy(false);
+      setEmpFormBusy(false);
     }
   }
 
@@ -390,7 +409,7 @@ export default function AdminPanelPage() {
     e.preventDefault();
     setErr("");
     setOk("");
-    setBusy(true);
+    setRoomFormBusy(true);
 
     try {
       const hotelId = Number(roomForm.hotelId);
@@ -418,7 +437,7 @@ export default function AdminPanelPage() {
         roomNumber,
         type: finalType,
         numberOfBeds,
-        price: priceStr, // string -> BigDecimal OK
+        price: priceStr,
         description: String(roomForm.description || "").trim(),
       });
 
@@ -441,7 +460,7 @@ export default function AdminPanelPage() {
       console.error(e2);
       setErr(e2?.response?.data?.message || e2?.message || "Nie udało się utworzyć pokoju.");
     } finally {
-      setBusy(false);
+      setRoomFormBusy(false);
     }
   }
 
@@ -629,10 +648,6 @@ export default function AdminPanelPage() {
                     </select>
                   </label>
 
-                  <div className="panel-sub">
-                    {filteredEmployees.length} / {employees.length}
-                  </div>
-
                   {(employeeHotelFilter || employeePositionFilter) && (
                     <button
                       className="panel-btn ghost"
@@ -661,21 +676,29 @@ export default function AdminPanelPage() {
                         <th>Nazwisko</th>
                         <th>Stanowisko</th>
                         <th>Hotel</th>
+                        <th>Usuń</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {filteredEmployees.map((e) => (
-                        <tr key={e.id}>
-                          <td>{e.id}</td>
-                          <td>{e.firstName}</td>
-                          <td>{e.lastName}</td>
-                          <td>
-                            <span className="pill">{e.position}</span>
-                          </td>
-                          <td>{hotelsById.get(e.hotelId) || `hotelId=${e.hotelId}`}</td>
-                        </tr>
-                      ))}
-                    </tbody>
+                      <tbody>
+                        {filteredEmployees.map((e) => (
+                          <tr key={e.id}>
+                            <td>{e.id}</td>
+                            <td>{e.firstName}</td>
+                            <td>{e.lastName}</td>
+                            <td><span className="pill">{e.position}</span></td>
+                            <td>{hotelsById.get(e.hotelId) || `hotelId=${e.hotelId}`}</td>
+                            <td style={{ width: 140 }}>
+                              <button
+                                className="panel-btn danger sm"
+                                type="button"
+                                onClick={() => openEmployeeDeleteConfirm(e)}
+                              >
+                                Usuń
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
                   </table>
                 </div>
               )}
@@ -812,7 +835,7 @@ export default function AdminPanelPage() {
                           <th>Typ</th>
                           <th>Łóżka</th>
                           <th>Cena</th>
-                          <th>Akcje</th>
+                          <th>Usuń</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -827,7 +850,7 @@ export default function AdminPanelPage() {
 
                             <td>
                               <button
-                                className="panel-btn ghost"
+                                className="panel-btn danger sm"
                                 type="button"
                                 onClick={() => openDeactivateConfirm(room)}
                               >
@@ -845,13 +868,19 @@ export default function AdminPanelPage() {
         </div>
 
         {modalOpen && (
-          <div className="modal-backdrop" onMouseDown={closeModal}>
+          <div className="modal-backdrop" onMouseDown={() => { if (!empFormBusy) closeModal(); }}>
             <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
               <div className="modal-head">
                 <h3 className="modal-title">Dodaj pracownika</h3>
-                <button className="modal-close" type="button" onClick={closeModal} aria-label="Zamknij">
-                  ×
-                </button>
+                  <button
+                    className="modal-close"
+                    type="button"
+                    onClick={closeModal}
+                    aria-label="Zamknij"
+                    disabled={empFormBusy}
+                  >
+                    ×
+                  </button>
               </div>
 
               <form onSubmit={onCreateEmployee} className="form-grid">
@@ -912,50 +941,44 @@ export default function AdminPanelPage() {
                   <label style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 12, opacity: 0.9 }}>
                     <input
                       type="checkbox"
-                      checked={roomForm.useCustomType}
+                      checked={form.useCustomPosition}
                       onChange={(e) => {
                         const checked = e.target.checked;
-                        setRoomForm((f) => ({
+                        setForm((f) => ({
                           ...f,
-                          useCustomType: checked,
-                          customType: checked ? f.customType : "",
-                          type: checked ? "" : f.type, // jak przechodzisz na custom -> czyści select
+                          useCustomPosition: checked,
+                          customPosition: checked ? f.customPosition : "",
+                          position: checked ? "" : (positions[0] || f.position || ""),
                         }));
                       }}
                     />
-
                     Nowe stanowisko (wpisz ręcznie)
                   </label>
 
-                <div className="form-row">
-                  <input
-                    className="input-glass"
-                    placeholder="Telefon (9 cyfr)"
-                    value={form.phoneNumber}
-                    onChange={(e) => setField("phoneNumber", e.target.value)}
-                    inputMode="numeric"
-                    maxLength={9}
-                  />
+                    <div className="form-row">
+                      <input
+                        className="input-glass"
+                        placeholder="Telefon (9 cyfr)"
+                        value={form.phoneNumber}
+                        onChange={(e) => setField("phoneNumber", e.target.value)}
+                        inputMode="numeric"
+                        maxLength={9}
+                      />
 
-                  <select
-                    className="select-glass"
-                    value={form.hotelId}
-                    onChange={async (e) => {
-                      const id = e.target.value;
-                      setRoomField("hotelId", id);
-                      const types = await getRoomTypes(id);
-                      setRoomTypes(types);
-                    }}
-                    required
-                  >
-                    <option value="">Wybierz hotel</option>
-                    {hotels.map((h) => (
-                      <option key={h.id} value={h.id}>
-                        {h.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                      <select
+                        className="select-glass"
+                        value={form.hotelId}
+                        onChange={(e) => setField("hotelId", e.target.value)}
+                        required
+                      >
+                        <option value="">Wybierz hotel</option>
+                        {hotels.map((h) => (
+                          <option key={h.id} value={h.id}>
+                            {h.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
                 <hr className="hr-glass" />
 
@@ -992,11 +1015,17 @@ export default function AdminPanelPage() {
                 {err && <div className="panel-error">{err}</div>}
 
                 <div className="modal-actions">
-                  <button className="panel-btn ghost" type="button" onClick={closeModal} disabled={busy}>
+                  <button
+                    className="panel-btn ghost"
+                    type="button"
+                    onClick={closeModal}
+                    disabled={empFormBusy}
+                  >
                     Anuluj
                   </button>
-                  <button className="panel-btn" type="submit" disabled={busy}>
-                    {busy ? "Tworzę..." : "Utwórz"}
+
+                  <button className="panel-btn" type="submit" disabled={empFormBusy}>
+                    {empFormBusy ? "Tworzę..." : "Utwórz"}
                   </button>
                 </div>
               </form>
@@ -1005,11 +1034,11 @@ export default function AdminPanelPage() {
         )}
 
         {roomModalOpen && (
-          <div className="modal-backdrop" onMouseDown={closeRoomModal}>
+          <div className="modal-backdrop" onMouseDown={() => { if (!roomFormBusy) closeRoomModal(); }}>
             <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
               <div className="modal-head">
                 <h3 className="modal-title">Dodaj pokój</h3>
-                <button className="modal-close" type="button" onClick={closeRoomModal} aria-label="Zamknij">
+                <button className="modal-close" type="button" onClick={closeRoomModal} aria-label="Zamknij" disabled={roomFormBusy} >
                   ×
                 </button>
               </div>
@@ -1039,9 +1068,7 @@ export default function AdminPanelPage() {
                   />
                 </div>
 
-                {/* 2) Dwie kolumny: lewa (typ+checkbox+cena), prawa (łóżka+opis) */}
                 <div className="form-row" style={{ alignItems: "flex-start" }}>
-                  {/* LEWA KOLUMNA */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
                     {!roomForm.useCustomType ? (
                       <select
@@ -1085,7 +1112,6 @@ export default function AdminPanelPage() {
                     />
                   </div>
 
-                  {/* PRAWA KOLUMNA */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
                     <input
                       className="input-glass"
@@ -1110,14 +1136,20 @@ export default function AdminPanelPage() {
                 
                 {err && <div className="panel-error">{err}</div>}
 
-                <div className="modal-actions">
-                  <button className="panel-btn ghost" type="button" onClick={closeRoomModal} disabled={busy}>
-                    Anuluj
-                  </button>
-                  <button className="panel-btn" type="submit" disabled={busy}>
-                    {busy ? "Tworzę..." : "Utwórz"}
-                  </button>
-                </div>
+               <div className="modal-actions">
+                <button
+                  className="panel-btn ghost"
+                  type="button"
+                  onClick={closeRoomModal}
+                  disabled={roomFormBusy}
+                >
+                  Anuluj
+                </button>
+
+                <button className="panel-btn" type="submit" disabled={roomFormBusy}>
+                  {roomFormBusy ? "Tworzę..." : "Utwórz"}
+                </button>
+              </div>
               </form>
             </div>
           </div>
@@ -1182,6 +1214,73 @@ export default function AdminPanelPage() {
                   }}
                 >
                   {confirmBusy ? "Usuwam..." : "Tak, usuń"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {empConfirmOpen && employeeToDelete && (
+          <div className="modal-backdrop" onMouseDown={closeEmployeeDeleteConfirm}>
+            <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
+              <div className="modal-head">
+                <h3 className="modal-title">Potwierdź usunięcie</h3>
+                <button
+                  className="modal-close"
+                  type="button"
+                  onClick={closeEmployeeDeleteConfirm}
+                  aria-label="Zamknij"
+                  disabled={empConfirmBusy}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div style={{ marginTop: 10, opacity: 0.95 }}>
+                Czy na pewno chcesz usunąć pracownika{" "}
+                <b>
+                  {employeeToDelete.firstName} {employeeToDelete.lastName}
+                </b>{" "}
+                (ID: <b>{employeeToDelete.id}</b>)?
+              </div>
+
+              <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+                Zostanie usunięty pracownik oraz jego konto logowania.
+              </div>
+
+              {err && <div className="panel-error" style={{ marginTop: 12 }}>{err}</div>}
+
+              <div className="modal-actions" style={{ marginTop: 14 }}>
+                <button
+                  className="panel-btn ghost"
+                  type="button"
+                  onClick={closeEmployeeDeleteConfirm}
+                  disabled={empConfirmBusy}
+                >
+                  Anuluj
+                </button>
+
+                <button
+                  className="panel-btn danger"
+                  type="button"
+                  disabled={empConfirmBusy}
+                  onClick={async () => {
+                    setEmpConfirmBusy(true);
+                    setErr("");
+                    setOk("");
+                    try {
+                      await deleteEmployee(employeeToDelete.id);
+                      setOk("Pracownik usunięty.");
+                      closeEmployeeDeleteConfirm();
+                      await loadAll();
+                    } catch (e) {
+                      setErr(e?.response?.data?.message || "Nie udało się usunąć pracownika.");
+                    } finally {
+                      setEmpConfirmBusy(false);
+                    }
+                  }}
+                >
+                  {empConfirmBusy ? "Usuwam..." : "Tak, usuń"}
                 </button>
               </div>
             </div>

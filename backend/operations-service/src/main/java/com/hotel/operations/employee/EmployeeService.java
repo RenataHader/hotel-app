@@ -12,6 +12,7 @@ import java.util.List;
 public class EmployeeService {
 
     private final EmployeeRepository repo;
+    private final IdentityAccountClient identityAccountClient;
 
     public List<EmployeeResponse> getAll() {
         return repo.findAll().stream().map(this::toResponse).toList();
@@ -54,6 +55,9 @@ public class EmployeeService {
         if (!repo.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found");
         }
+
+        identityAccountClient.deleteAccountForEmployee(id);
+
         repo.deleteById(id);
     }
 

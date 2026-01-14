@@ -186,6 +186,8 @@ services:
       APP_SECURITY_PERMIT_ALL_0: "/**"
 
       APP_SERVICES_BOOKING_BASE_URL: "http://booking-service:8081"
+      APP_SERVICES_IDENTITY_BASE_URL: "http://identity-service:8083"
+
     depends_on:
       db-operations:
         condition: service_healthy

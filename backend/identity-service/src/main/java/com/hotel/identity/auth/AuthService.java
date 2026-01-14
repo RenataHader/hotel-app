@@ -72,6 +72,11 @@ public class AuthService {
         }
     }
 
+    public void deleteEmployeeAccount(int employeeId) {
+        repo.findByEmployeeId(employeeId)
+                .ifPresent(repo::delete);
+    }
+
     private Integer accGetIdSafe(Integer id) {
         if (id == null) throw new IllegalStateException("Account ID is null (did you save the entity before token?)");
         return id;
