@@ -22,7 +22,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
     SELECT DISTINCT COALESCE(rid, r.roomId)
     FROM Reservation r
     LEFT JOIN r.roomIds rid
-    WHERE r.status <> com.hotel.booking.reservation.ReservationStatus.CANCELLED
+    WHERE r.status <> com.hotel.booking.reservation.ReservationStatus.ANULOWANE
       AND (r.checkInDate < :to AND r.checkOutDate > :from)
       AND (rid IS NOT NULL OR r.roomId IS NOT NULL)
     """)
@@ -33,7 +33,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
     FROM Reservation r
     LEFT JOIN r.roomIds rid
     WHERE (rid IN :roomIds OR r.roomId IN :roomIds)
-        AND r.status <> com.hotel.booking.reservation.ReservationStatus.CANCELLED
+        AND r.status <> com.hotel.booking.reservation.ReservationStatus.ANULOWANE
         AND (r.checkInDate < :to AND r.checkOutDate > :from)
     """)
     boolean existsAnyRoomOverlap(
@@ -47,7 +47,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
     FROM Reservation r
     LEFT JOIN r.roomIds rid
     WHERE (rid = :roomId OR r.roomId = :roomId)
-      AND r.status <> com.hotel.booking.reservation.ReservationStatus.CANCELLED
+      AND r.status <> com.hotel.booking.reservation.ReservationStatus.ANULOWANE
       AND r.checkOutDate > :from
     """)
     boolean existsFutureForRoom(@Param("roomId") Integer roomId,

@@ -44,6 +44,10 @@ function normalizeSpaces(s) {
   return String(s || "").trim().replace(/\s+/g, " ");
 }
 
+function isAdminEmployee(emp) {
+  return String(emp?.position || "").trim().toLowerCase() === "administrator";
+}
+
 export default function AdminPanelPage() {
   const nav = useNavigate();
   const { user, signOut } = useAuth();
@@ -152,6 +156,11 @@ export default function AdminPanelPage() {
       return okHotel && okPos;
     });
   }, [employees, employeeHotelFilter, employeePositionFilter]);
+
+  const canDeleteAnyEmployee = useMemo(
+  () => filteredEmployees.some((emp) => !isAdminEmployee(emp)),
+  [filteredEmployees]
+);
 
   const filteredRooms = useMemo(() => {
     return rooms.filter((room) => {
@@ -409,21 +418,20 @@ export default function AdminPanelPage() {
     e.preventDefault();
     setErr("");
     setOk("");
-    setRoomFormBusy(true);
+
+    const hotelId = Number(roomForm.hotelId);
+    const roomNumber = String(roomForm.roomNumber || "").trim();
+
+    const finalType = roomForm.useCustomType
+      ? normalizeSpaces(roomForm.customType)
+      : normalizeSpaces(roomForm.type);
+
+    const numberOfBeds = Number(roomForm.numberOfBeds);
+
+    const priceStr = String(roomForm.price || "").trim().replace(",", ".");
+    const priceNum = Number(priceStr);
 
     try {
-      const hotelId = Number(roomForm.hotelId);
-      const roomNumber = String(roomForm.roomNumber || "").trim();
-
-      const finalType = roomForm.useCustomType
-        ? normalizeSpaces(roomForm.customType)
-        : normalizeSpaces(roomForm.type);
-
-      const numberOfBeds = Number(roomForm.numberOfBeds);
-
-      const priceStr = String(roomForm.price || "").trim().replace(",", ".");
-      const priceNum = Number(priceStr);
-
       if (!hotelId) throw new Error("Wybierz hotel.");
       if (!roomNumber) throw new Error("Podaj numer pokoju.");
       if (!finalType) throw new Error("Wybierz typ albo wpisz nowy.");
@@ -431,6 +439,19 @@ export default function AdminPanelPage() {
         throw new Error("Liczba łóżek musi być >= 1.");
       if (!priceStr || !Number.isFinite(priceNum) || priceNum <= 0)
         throw new Error("Cena musi być > 0.");
+
+      const existsLocal = rooms.some((r) => {
+        const sameHotel = String(r.hotelId) === String(hotelId);
+        const sameNumber = String(r.roomNumber || "").trim() === roomNumber;
+        return sameHotel && sameNumber;
+      });
+
+      if (existsLocal) {
+        setErr(`Pokój o numerze ${roomNumber} już istnieje w tym hotelu.`);
+        return;
+      }
+
+      setRoomFormBusy(true);
 
       await createRoom({
         hotelId,
@@ -458,11 +479,24 @@ export default function AdminPanelPage() {
       await loadAll();
     } catch (e2) {
       console.error(e2);
-      setErr(e2?.response?.data?.message || e2?.message || "Nie udało się utworzyć pokoju.");
+
+      const status = e2?.response?.status;
+      const msg = e2?.response?.data?.message ?? e2?.response?.data ?? e2?.message ?? "";
+
+      const isConflict =
+        status === 409 ||
+        /exists|already|duplicate|zaj[eę]t|istnieje/i.test(String(msg));
+
+      if (isConflict) {
+        setErr(`Pokój o numerze ${roomNumber} już istnieje w tym hotelu.`);
+      } else {
+        setErr(msg || "Nie udało się utworzyć pokoju.");
+      }
     } finally {
       setRoomFormBusy(false);
     }
   }
+
 
   if (loading) {
     return (
@@ -676,7 +710,7 @@ export default function AdminPanelPage() {
                         <th>Nazwisko</th>
                         <th>Stanowisko</th>
                         <th>Hotel</th>
-                        <th>Usuń</th>
+                        {canDeleteAnyEmployee && <th>Usuń</th>}
                       </tr>
                     </thead>
                       <tbody>
@@ -687,15 +721,19 @@ export default function AdminPanelPage() {
                             <td>{e.lastName}</td>
                             <td><span className="pill">{e.position}</span></td>
                             <td>{hotelsById.get(e.hotelId) || `hotelId=${e.hotelId}`}</td>
-                            <td style={{ width: 140 }}>
-                              <button
-                                className="panel-btn danger sm"
-                                type="button"
-                                onClick={() => openEmployeeDeleteConfirm(e)}
-                              >
-                                Usuń
-                              </button>
-                            </td>
+                              {canDeleteAnyEmployee && (
+                                <td style={{ width: 140 }}>
+                                  {!isAdminEmployee(e) ? (
+                                    <button
+                                      className="panel-btn danger sm"
+                                      type="button"
+                                      onClick={() => openEmployeeDeleteConfirm(e)}
+                                    >
+                                      Usuń
+                                    </button>
+                                  ) : null}
+                                </td>
+                              )}
                           </tr>
                         ))}
                       </tbody>

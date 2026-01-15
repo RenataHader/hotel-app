@@ -17,7 +17,8 @@ public class AccountService {
 
     @Transactional
     public void deleteByEmployeeId(Integer employeeId) {
-        if (employeeId == null) return;
+        if (employeeId == null)
+            return;
         repo.deleteByEmployeeId(employeeId);
     }
 

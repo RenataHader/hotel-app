@@ -218,7 +218,7 @@ public class ReservationService {
         reservation.setRoomIds(new ArrayList<>(rooms.stream().map(ReservedRoomResponse::getRoomId).toList()));
 
         reservation.setRoomType(computeRoomType(rooms));
-        reservation.setStatus(ReservationStatus.CONFIRMED);
+        reservation.setStatus(ReservationStatus.ZAREZEROWANE);
 
         Reservation saved = reservationRepo.save(reservation);
 
@@ -271,12 +271,12 @@ public class ReservationService {
             throw new IllegalArgumentException("Brak uprawnień");
         }
 
-        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+        if (reservation.getStatus() == ReservationStatus.ANULOWANE) {
             return;
         }
 
-        if (reservation.getStatus() == ReservationStatus.CHECKED_IN ||
-                reservation.getStatus() == ReservationStatus.CHECKED_OUT) {
+        if (reservation.getStatus() == ReservationStatus.ZAKWATEROWANE ||
+                reservation.getStatus() == ReservationStatus.WYKWATEROWANE) {
             throw new IllegalArgumentException("Nie można anulować po check-in");
         }
 
@@ -285,11 +285,11 @@ public class ReservationService {
             throw new IllegalArgumentException("Nie można anulować w dniu zameldowania ani później");
         }
 
-        reservation.setStatus(ReservationStatus.CANCELLED);
+        reservation.setStatus(ReservationStatus.ANULOWANE);
         reservationRepo.save(reservation);
 
         paymentRepo.findByReservation_Id(id).ifPresent(p -> {
-            p.setStatus("CANCELLED");
+            p.setStatus("ANULOWANE");
             paymentRepo.save(p);
         });
     }
@@ -306,7 +306,7 @@ public class ReservationService {
             throw new IllegalArgumentException("Nieznany status: " + value);
         }
 
-        if (newStatus == ReservationStatus.CANCELLED) {
+        if (newStatus == ReservationStatus.ANULOWANE) {
             throw new IllegalArgumentException("Użyj endpointu /cancel");
         }
 
@@ -316,15 +316,15 @@ public class ReservationService {
         if (!user.hotelId().equals(reservation.getHotelId())) {
             throw new IllegalArgumentException("Brak uprawnień do tego hotelu");
         }
-        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+        if (reservation.getStatus() == ReservationStatus.ANULOWANE) {
             throw new IllegalArgumentException("Rezerwacja jest anulowana");
         }
 
-        if (newStatus == ReservationStatus.CHECKED_IN && reservation.getStatus() != ReservationStatus.CONFIRMED) {
-            throw new IllegalArgumentException("CHECKED_IN tylko z CONFIRMED");
+        if (newStatus == ReservationStatus.ZAKWATEROWANE && reservation.getStatus() != ReservationStatus.ZAREZEROWANE) {
+            throw new IllegalArgumentException("ZAKWATEROWANE tylko z ZAREZERWOWANE");
         }
-        if (newStatus == ReservationStatus.CHECKED_OUT && reservation.getStatus() != ReservationStatus.CHECKED_IN) {
-            throw new IllegalArgumentException("CHECKED_OUT tylko z CHECKED_IN");
+        if (newStatus == ReservationStatus.WYKWATEROWANE && reservation.getStatus() != ReservationStatus.ZAKWATEROWANE) {
+            throw new IllegalArgumentException("WYKWATEROWANE tylko z ZAKWATEROWANE");
         }
 
         reservation.setStatus(newStatus);

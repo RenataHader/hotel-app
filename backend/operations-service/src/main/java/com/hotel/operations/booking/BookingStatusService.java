@@ -16,7 +16,7 @@ public class BookingStatusService {
     private String bookingBaseUrl;
 
     public void checkIn(Integer reservationId, String authHeader) {
-        String url = bookingBaseUrl + "/api/reservations/" + reservationId + "/status?value=CHECKED_IN";
+        String url = bookingBaseUrl + "/api/reservations/" + reservationId + "/status?value=ZAKWATEROWANE";
 
         HttpHeaders headers = new HttpHeaders();
         if (authHeader != null && !authHeader.isBlank()) {
@@ -28,7 +28,7 @@ public class BookingStatusService {
     }
 
     public void checkOut(Integer reservationId, String authHeader) {
-        String url = bookingBaseUrl + "/api/reservations/" + reservationId + "/status?value=CHECKED_OUT";
+        String url = bookingBaseUrl + "/api/reservations/" + reservationId + "/status?value=WYKWATEROWANE";
 
         HttpHeaders headers = new HttpHeaders();
         if (authHeader != null && !authHeader.isBlank()) {

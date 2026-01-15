@@ -130,7 +130,7 @@ function ReservationDetailsModal({ reservation, hotels, onClose, onCancel }) {
   const services = Array.isArray(reservation?.services) ? reservation.services : [];
   const rooms = Array.isArray(reservation?.rooms) ? reservation.rooms : [];
 
-  const canCancelByStatus = !["CANCELLED", "CHECKED_IN", "CHECKED_OUT"].includes(statusUpper);
+  const canCancelByStatus = !["ANULOWANE", "ZAKWATEROWANE", "WYKWATEROWANE"].includes(statusUpper);
 
   const checkIn = parseISOToUTC(from);
   const now = new Date();
@@ -386,7 +386,7 @@ export default function GuestHome() {
       const fromDate = parseISOToUTC(fromISO);
       const time = fromDate ? fromDate.getTime() : Number.POSITIVE_INFINITY;
 
-      const isCancelled = status === "CANCELLED" || status === "CANCELED";
+      const isCancelled = status === "ANULOWANE";
 
       return { r, idx, time, isCancelled };
     });
