@@ -4,6 +4,16 @@ import { getRooms } from "../api/catalog";
 import { groupRooms } from "../utils/groupRooms";
 import "./RoomsPage.css";
 
+const ROOM_IMAGES = {
+  "Single": "/rooms/single.jpg",
+  "Double": "/rooms/double.jpg",
+  "Twin": "/rooms/twin.jpg",
+  "Family": "/rooms/family.jpg",
+  "Suite": "/rooms/suite.jpg",
+};
+
+const DEFAULT_IMAGE = "/rooms/default-room.jpg";
+
 export default function RoomsPage() {
   const { selectedHotelId, hotels } = useOutletContext();
   const [rooms, setRooms] = useState([]);
@@ -31,7 +41,13 @@ export default function RoomsPage() {
 
   const roomGroups = useMemo(() => groupRooms(rooms), [rooms]);
 
-  if (loading) return <div className="panel-page"><div className="glass-card">Ładowanie listy pokoi...</div></div>;
+  if (loading) {
+    return (
+      <div className="panel-page">
+        <div className="glass-card">Ładowanie listy pokoi...</div>
+      </div>
+    );
+  }
 
   return (
     <main className="rooms-page">
@@ -40,9 +56,16 @@ export default function RoomsPage() {
         <div className="rooms-grid">
           {roomGroups.map((g) => (
             <div key={g.key} className="room-type-card">
-              <div className="room-image-placeholder">
-                <span>Zdjęcie: {g.type}</span>
+              <div className="room-image-container">
+                <img 
+                  src={ROOM_IMAGES[g.type] || DEFAULT_IMAGE} 
+                  alt={`Pokój typu ${g.type}`} 
+                  className="room-type-image"
+                  onError={(e) => { e.target.src = DEFAULT_IMAGE; }}
+                />
+                <div className="room-type-badge">{g.type}</div>
               </div>
+              
               <div className="room-info">
                 <h3>{g.type}</h3>
                 <p className="room-description">
@@ -55,7 +78,9 @@ export default function RoomsPage() {
               </div>
             </div>
           ))}
-          {roomGroups.length === 0 && <p className="placeholder">Brak zdefiniowanych pokoi dla tego hotelu.</p>}
+          {roomGroups.length === 0 && (
+            <p className="placeholder">Brak zdefiniowanych pokoi dla tego hotelu.</p>
+          )}
         </div>
       </div>
     </main>
