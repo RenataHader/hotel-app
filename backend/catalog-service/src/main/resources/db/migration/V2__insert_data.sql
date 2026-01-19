@@ -1,8 +1,8 @@
 INSERT INTO hotel (id_hotelu, nazwa, adres) VALUES
-  (1, 'Hotel 1 - Dach w chmurach', 'ul. Widokowa 7, 58-540 Karpacz'),
-  (2, 'Hotel 2 - Dach nad palmą',   'ul. Palmiarnia 3, 60-809 Poznań'),
-  (3, 'Hotel 3 - Dach przy żaglu', 'ul. Marina 12, 81-340 Gdynia'),
-  (4, 'Hotel 4 - Dach w lesie',    'ul. Leśna 22, 17-230 Białowieża')
+  (1, 'Dach w chmurach', 'ul. Widokowa 7, 58-540 Karpacz'),
+  (2, 'Dach nad palmą',   'ul. Palmiarnia 3, 60-809 Poznań'),
+  (3, 'Dach przy żaglu', 'ul. Marina 12, 81-340 Gdynia'),
+  (4, 'Dach w lesie',    'ul. Leśna 22, 17-230 Białowieża')
 ON CONFLICT (id_hotelu) DO UPDATE SET nazwa = EXCLUDED.nazwa, adres = EXCLUDED.adres;
 
 INSERT INTO wyzywienie (id_wyzywienia, typ, cena) VALUES
@@ -13,7 +13,7 @@ INSERT INTO wyzywienie (id_wyzywienia, typ, cena) VALUES
   (5, 'All inclusive', 160.00)
 ON CONFLICT (id_wyzywienia) DO UPDATE SET cena = EXCLUDED.cena;
 
-INSERT INTO usluga (id_uslugi, nazwa, billing_type, cena) VALUES
+INSERT INTO usluga (id_uslugi, nazwa, typ_rozliczenia, cena) VALUES
   (1, 'Siłownia', 'PER_PERSON_PER_DAY', 20.00),
   (2, 'Basen', 'PER_PERSON_PER_DAY', 25.00),
   (3, 'Sala zabaw dla dzieci', 'PER_PERSON_PER_DAY', 10.00),

@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS wyzywienie (
 CREATE TABLE IF NOT EXISTS usluga (
     id_uslugi SERIAL PRIMARY KEY,
     nazwa VARCHAR(100) NOT NULL,
-    billing_type VARCHAR(30) NOT NULL,
+    typ_rozliczenia VARCHAR(30) NOT NULL,
     cena DECIMAL(10, 2) NOT NULL,
 
     CONSTRAINT uq_usluga_nazwa UNIQUE (nazwa)

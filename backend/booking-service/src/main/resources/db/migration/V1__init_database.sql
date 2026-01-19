@@ -11,33 +11,22 @@ CREATE TABLE IF NOT EXISTS rezerwacja (
     id_goscia INTEGER NOT NULL REFERENCES gosc(id_goscia),
 
     id_hotelu INTEGER NOT NULL,
-    hotel_name VARCHAR(100),
 
-    room_type VARCHAR(50) NOT NULL,
-    guest_count INTEGER,
-
-    id_pokoju INTEGER NOT NULL,
-    room_number VARCHAR(10),
+    liczba_gosci INTEGER NOT NULL,
+    id_wyzywienia INTEGER NOT NULL,
 
     data_zameldowania DATE NOT NULL,
     data_wymeldowania DATE NOT NULL,
 
-    price DECIMAL(10, 2) NOT NULL,
+    kwota DECIMAL(10, 2) NOT NULL,
     status VARCHAR(20) NOT NULL,
 
-    meal_type VARCHAR(50) NOT NULL DEFAULT 'Brak',
-    meal_price_per_person DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-
-    CONSTRAINT chk_dates CHECK (data_wymeldowania > data_zameldowania),
-    CONSTRAINT chk_guest_count CHECK (guest_count IS NULL OR guest_count > 0)
+    CONSTRAINT chk_daty CHECK (data_wymeldowania > data_zameldowania),
+    CONSTRAINT chk_liczba_gosci CHECK (liczba_gosci > 0)
 );
 
 CREATE INDEX IF NOT EXISTS idx_rezerwacja_guest ON rezerwacja(id_goscia);
 CREATE INDEX IF NOT EXISTS idx_rezerwacja_hotel ON rezerwacja(id_hotelu);
-
-CREATE INDEX IF NOT EXISTS idx_rezerwacja_room_dates
-    ON rezerwacja(id_pokoju, data_zameldowania, data_wymeldowania);
-
 CREATE INDEX IF NOT EXISTS idx_rezerwacja_status_dates
     ON rezerwacja(status, data_zameldowania, data_wymeldowania);
 
