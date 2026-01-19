@@ -199,25 +199,19 @@ public class ReservationService {
         reservation.setGuest(guest);
 
         reservation.setHotelId(quote.getHotelId());
-        reservation.setHotelName(quote.getHotelName());
 
         reservation.setGuestCount(request.getGuestCount());
+        reservation.setMealId(request.getMealId());
         reservation.setCheckInDate(request.getCheckInDate());
         reservation.setCheckOutDate(request.getCheckOutDate());
 
         reservation.setPrice(serverTotal);
 
-        reservation.setMealType(quote.getMealType());
-        reservation.setMealPricePerPerson(quote.getMealPricePerPerson());
-
         List<Integer> reqServiceIds = request.getServiceIds() == null ? List.of() : request.getServiceIds();
         reservation.setServiceIds(new ArrayList<>(reqServiceIds.stream().filter(Objects::nonNull).toList()));
 
-        reservation.setRoomId(rooms.get(0).getRoomId());
-        reservation.setRoomNumber(rooms.get(0).getRoomNumber());
         reservation.setRoomIds(new ArrayList<>(rooms.stream().map(ReservedRoomResponse::getRoomId).toList()));
 
-        reservation.setRoomType(computeRoomType(rooms));
         reservation.setStatus(ReservationStatus.ZAREZEROWANE);
 
         Reservation saved = reservationRepo.save(reservation);
@@ -321,7 +315,7 @@ public class ReservationService {
         }
 
         if (newStatus == ReservationStatus.ZAKWATEROWANE && reservation.getStatus() != ReservationStatus.ZAREZEROWANE) {
-            throw new IllegalArgumentException("ZAKWATEROWANE tylko z ZAREZERWOWANE");
+            throw new IllegalArgumentException("ZAKWATEROWANE tylko z ZAREZEROWANE");
         }
         if (newStatus == ReservationStatus.WYKWATEROWANE && reservation.getStatus() != ReservationStatus.ZAKWATEROWANE) {
             throw new IllegalArgumentException("WYKWATEROWANE tylko z ZAKWATEROWANE");
@@ -426,14 +420,6 @@ public class ReservationService {
         return new ArrayList<>(ids);
     }
 
-    private String computeRoomType(List<ReservedRoomResponse> rooms) {
-        if (rooms == null || rooms.isEmpty()) return "UNKNOWN";
-        String first = rooms.get(0).getType();
-        if (first == null) return "UNKNOWN";
-        boolean same = rooms.stream().allMatch(r -> first.equalsIgnoreCase(r.getType()));
-        return same ? first : "MIXED";
-    }
-
     private Guest getAuthenticatedGuest() {
         JwtUser user = getJwtUser();
         if (user.guestId() == null) throw new IllegalArgumentException("Użytkownik nie jest gościem");
@@ -472,35 +458,51 @@ public class ReservationService {
                 ? null
                 : (r.getGuest().getFirstName() + " " + r.getGuest().getLastName());
 
-        List<ReservedRoomResponse> rooms;
+        List<Integer> ids = (r.getRoomIds() == null) ? new ArrayList<>() : new ArrayList<>(r.getRoomIds());
+        Integer primaryRoomId = ids.isEmpty() ? null : ids.get(0);
+
+        List<ReservedRoomResponse> rooms = new ArrayList<>();
         int totalBeds = 0;
+        String hotelName = null;
+        String primaryRoomNumber = null;
 
-        try {
-            List<Integer> ids = (r.getRoomIds() == null) ? new ArrayList<>() : new ArrayList<>(r.getRoomIds());
-            if (ids.isEmpty() && r.getRoomId() != null) ids = List.of(r.getRoomId());
+        for (Integer id : ids) {
+            if (id == null) continue;
+            try {
+                CatalogClient.RoomSnapshot s = catalogClient.getRoom(id);
+                if (s == null) {
+                    rooms.add(ReservedRoomResponse.builder().roomId(id).build());
+                    continue;
+                }
 
-            rooms = ids.stream()
-                    .map(catalogClient::getRoom)
-                    .filter(Objects::nonNull)
-                    .map(s -> ReservedRoomResponse.builder()
-                            .roomId(s.id())
-                            .roomNumber(s.roomNumber())
-                            .type(s.type())
-                            .numberOfBeds(s.numberOfBeds())
-                            .pricePerNight(s.price() == null ? null : money(s.price()))
-                            .build())
-                    .toList();
+                if (hotelName == null) hotelName = s.hotelName();
+                if (primaryRoomNumber == null && Objects.equals(id, primaryRoomId)) {
+                    primaryRoomNumber = s.roomNumber();
+                }
 
-            totalBeds = rooms.stream().mapToInt(rr -> safeInt(rr.getNumberOfBeds())).sum();
-        } catch (Exception e) {
-            List<Integer> ids = (r.getRoomIds() == null) ? new ArrayList<>() : new ArrayList<>(r.getRoomIds());
-            if (ids.isEmpty() && r.getRoomId() != null) ids = List.of(r.getRoomId());
+                rooms.add(ReservedRoomResponse.builder()
+                        .roomId(s.id())
+                        .roomNumber(s.roomNumber())
+                        .type(s.type())
+                        .numberOfBeds(s.numberOfBeds())
+                        .pricePerNight(s.price() == null ? null : money(s.price()))
+                        .build());
 
-            rooms = ids.stream()
-                    .filter(Objects::nonNull)
-                    .map(id -> ReservedRoomResponse.builder().roomId(id).build())
-                    .toList();
+                totalBeds += safeInt(s.numberOfBeds());
+            } catch (Exception ignored) {
+                rooms.add(ReservedRoomResponse.builder().roomId(id).build());
+            }
         }
+
+        String mealType = null;
+        BigDecimal mealPricePerPerson = null;
+        try {
+            CatalogClient.MealSnapshot meal = catalogClient.getMealById(r.getMealId());
+            if (meal != null) {
+                mealType = meal.type();
+                mealPricePerPerson = meal.price() == null ? null : money(meal.price());
+            }
+        } catch (Exception ignored) {}
 
         List<SelectedServiceResponse> services = List.of();
         try {
@@ -548,16 +550,16 @@ public class ReservationService {
                 .id(r.getId())
                 .guestFullName(guestFullName)
                 .hotelId(r.getHotelId())
-                .hotelName(r.getHotelName())
-                .roomId(r.getRoomId())
-                .roomNumber(r.getRoomNumber())
+                .hotelName(hotelName)
+                .roomId(primaryRoomId)
+                .roomNumber(primaryRoomNumber)
                 .rooms(rooms)
                 .guestCount(r.getGuestCount())
                 .totalBeds(totalBeds)
                 .checkInDate(r.getCheckInDate())
                 .checkOutDate(r.getCheckOutDate())
-                .mealType(r.getMealType())
-                .mealPricePerPerson(r.getMealPricePerPerson())
+                .mealType(mealType)
+                .mealPricePerPerson(mealPricePerPerson)
                 .services(services)
                 .price(r.getPrice())
                 .status(r.getStatus() == null ? null : r.getStatus().name())

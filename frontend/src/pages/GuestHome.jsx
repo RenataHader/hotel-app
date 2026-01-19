@@ -219,17 +219,8 @@ function ReservationDetailsModal({ reservation, hotels, onClose, onCancel }) {
                 <ul className="list">
                   {services.map((s, i) => (
                     <li key={s?.id ?? `${s?.name ?? "service"}-${i}`}>
-                      <div className="service-row">
-                        <div>
-                          <b>{s?.name || "Usługa"}</b>
-                        </div>
-                        <div className="service-price">
-                          {s?.totalPrice !== undefined && s?.totalPrice !== null && s?.totalPrice !== ""
-                            ? `${moneyPLN(s.totalPrice)} PLN`
-                            : s?.unitPrice !== undefined && s?.unitPrice !== null && s?.unitPrice !== ""
-                              ? `${moneyPLN(s.unitPrice)} PLN`
-                              : "—"}
-                        </div>
+                      <div>
+                        <b>{s?.name || "Usługa"}</b>
                       </div>
                     </li>
                   ))}
@@ -246,9 +237,6 @@ function ReservationDetailsModal({ reservation, hotels, onClose, onCancel }) {
                       <b>{rr?.type || "Pokój"}</b>
                       {rr?.numberOfBeds !== undefined && rr?.numberOfBeds !== null ? (
                         <span className="muted"> — {rr.numberOfBeds} łóżka</span>
-                      ) : null}
-                      {rr?.pricePerNight !== undefined && rr?.pricePerNight !== null && rr?.pricePerNight !== "" ? (
-                        <span className="muted"> — {moneyPLN(rr.pricePerNight)} PLN / noc</span>
                       ) : null}
                     </li>
                   ))}

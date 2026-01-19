@@ -21,7 +21,7 @@ public class ServiceItem {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "billing_type", nullable = false)
+    @Column(name = "typ_rozliczenia", nullable = false)
     private BillingType billingType;
 
     @Column(name = "cena", nullable = false)

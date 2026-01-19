@@ -94,7 +94,7 @@ export default function TopBar({
           >
             {hotels.length === 0 && <option value="">Ładowanie...</option>}
             {hotels.map((h) => (
-              <option key={h.id} value={h.id}>
+              <option>
                 {h.name}
               </option>
             ))}

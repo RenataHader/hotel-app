@@ -19,22 +19,21 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
     Optional<Reservation> findByIdAndGuest_Id(Integer id, Integer guestId);
 
     @Query("""
-    SELECT DISTINCT COALESCE(rid, r.roomId)
-    FROM Reservation r
-    LEFT JOIN r.roomIds rid
-    WHERE r.status <> com.hotel.booking.reservation.ReservationStatus.ANULOWANE
-      AND (r.checkInDate < :to AND r.checkOutDate > :from)
-      AND (rid IS NOT NULL OR r.roomId IS NOT NULL)
+        SELECT DISTINCT rid
+        FROM Reservation r
+        JOIN r.roomIds rid
+        WHERE r.status <> com.hotel.booking.reservation.ReservationStatus.ANULOWANE
+          AND (r.checkInDate < :to AND r.checkOutDate > :from)
     """)
     List<Integer> findReservedRoomIds(@Param("from") LocalDate from, @Param("to") LocalDate to);
 
     @Query("""
-    SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END
-    FROM Reservation r
-    LEFT JOIN r.roomIds rid
-    WHERE (rid IN :roomIds OR r.roomId IN :roomIds)
-        AND r.status <> com.hotel.booking.reservation.ReservationStatus.ANULOWANE
-        AND (r.checkInDate < :to AND r.checkOutDate > :from)
+        SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END
+        FROM Reservation r
+        JOIN r.roomIds rid
+        WHERE rid IN :roomIds
+          AND r.status <> com.hotel.booking.reservation.ReservationStatus.ANULOWANE
+          AND (r.checkInDate < :to AND r.checkOutDate > :from)
     """)
     boolean existsAnyRoomOverlap(
             @Param("roomIds") List<Integer> roomIds,
@@ -43,12 +42,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
     );
 
     @Query("""
-    SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END
-    FROM Reservation r
-    LEFT JOIN r.roomIds rid
-    WHERE (rid = :roomId OR r.roomId = :roomId)
-      AND r.status <> com.hotel.booking.reservation.ReservationStatus.ANULOWANE
-      AND r.checkOutDate > :from
+        SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END
+        FROM Reservation r
+        JOIN r.roomIds rid
+        WHERE rid = :roomId
+          AND r.status <> com.hotel.booking.reservation.ReservationStatus.ANULOWANE
+          AND r.checkOutDate > :from
     """)
     boolean existsFutureForRoom(@Param("roomId") Integer roomId,
                                 @Param("from") LocalDate from);

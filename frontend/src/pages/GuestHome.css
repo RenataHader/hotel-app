@@ -270,7 +270,7 @@
   position: fixed;
   inset: 0;
   z-index: 50;
-  padding: 18px;
+  padding: 8px;
 
   display: flex;
   align-items: center;
@@ -282,7 +282,7 @@
 }
 
 .modal-panel {
-  width: min(860px, 100%);
+  width: min(600px, calc(100vw - 16px));
   border-radius: 18px;
   padding: 14px;
 

@@ -3,8 +3,6 @@ package com.hotel.booking.reservation;
 import com.hotel.booking.guest.Guest;
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.Objects;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -29,20 +27,11 @@ public class Reservation {
     @Column(name = "id_hotelu", nullable = false)
     private Integer hotelId;
 
-    @Column(name = "hotel_name")
-    private String hotelName;
-
-    @Column(name = "room_type", nullable = false)
-    private String roomType;
-
-    @Column(name = "id_pokoju")
-    private Integer roomId;
-
-    @Column(name = "room_number")
-    private String roomNumber;
-
-    @Column(name = "guest_count")
+    @Column(name = "liczba_gosci", nullable = false)
     private Integer guestCount;
+
+    @Column(name = "id_wyzywienia", nullable = false)
+    private Integer mealId;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
@@ -60,18 +49,13 @@ public class Reservation {
     @Column(name = "data_wymeldowania", nullable = false)
     private LocalDate checkOutDate;
 
-    @Column(nullable = false)
+
+    @Column(name = "kwota", nullable = false)
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     private ReservationStatus status;
-
-    @Column(name = "meal_type", nullable = false)
-    private String mealType;
-
-    @Column(name = "meal_price_per_person", nullable = false)
-    private BigDecimal mealPricePerPerson;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
@@ -82,5 +66,4 @@ public class Reservation {
     @OrderColumn(name = "service_order")
     @Builder.Default
     private List<Integer> serviceIds = new ArrayList<>();
-
 }
