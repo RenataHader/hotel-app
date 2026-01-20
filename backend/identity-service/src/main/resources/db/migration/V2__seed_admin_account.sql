@@ -1,14 +1,7 @@
--- =========================================================
--- identity_db: SEED kont (ADMIN + EMPLOYEE + GUEST)
--- Hasla: bcrypt (pgcrypto)
--- =========================================================
 
-BEGIN;
 
--- 1) wymagane rozszerzenie do crypt()/gen_salt()
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- 2) tabela konto
 CREATE TABLE IF NOT EXISTS konto (
     id_konta   SERIAL PRIMARY KEY,
     haslo      VARCHAR(255) NOT NULL,
@@ -46,7 +39,7 @@ SET haslo = EXCLUDED.haslo,
 -- =========================================================
 -- B) PRACOWNICY 2..33
 -- email: imie.nazwisko@hotel.local
--- haslo: imienazwisko (bez kropek), min 8 -> dopnij cyfry
+-- haslo: imienazwisko (bez kropek), min 8
 -- =========================================================
 WITH emp_src AS (
   SELECT * FROM (VALUES
@@ -125,7 +118,7 @@ SET haslo = EXCLUDED.haslo,
 -- =========================================================
 -- C) GOSCI 1..1200
 -- email: imie.nazwisko@popularna_domena (unikalny przez numer gdy duplikat)
--- haslo: imienazwisko, min 8 -> dopnij cyfry
+-- haslo: imienazwisko, min 8 ->
 -- =========================================================
 WITH gs AS (
   SELECT generate_series(1, 1200) AS id_goscia
@@ -200,20 +193,3 @@ SET haslo = EXCLUDED.haslo,
 SELECT setval(pg_get_serial_sequence('konto', 'id_konta'),
               (SELECT COALESCE(MAX(id_konta), 1) FROM konto));
 
-COMMIT;
-
--- =========================================================
--- (opcjonalnie) szybki podglad hasel testowych dla personelu:
--- SELECT email,
---        CASE WHEN email='admin@hotel.local' THEN 'admin123!'
---             WHEN length(regexp_replace(split_part(email,'@',1), '\.', '', 'g')) >= 8
---               THEN regexp_replace(split_part(email,'@',1), '\.', '', 'g')
---             ELSE regexp_replace(split_part(email,'@',1), '\.', '', 'g')
---                  || lpad((id_pracownika % 100)::text,
---                          8 - length(regexp_replace(split_part(email,'@',1), '\.', '', 'g')),
---                          '0')
---        END AS haslo_testowe
--- FROM konto
--- WHERE id_pracownika IS NOT NULL
--- ORDER BY email;
--- =========================================================
