@@ -30,6 +30,13 @@ CREATE INDEX IF NOT EXISTS idx_rezerwacja_hotel ON rezerwacja(id_hotelu);
 CREATE INDEX IF NOT EXISTS idx_rezerwacja_status_dates
     ON rezerwacja(status, data_zameldowania, data_wymeldowania);
 
+CREATE INDEX IF NOT EXISTS idx_rez_checkin_fast
+   ON rezerwacja (id_hotelu, data_zameldowania, status);
+
+CREATE INDEX IF NOT EXISTS idx_rez_checkout_fast
+   ON rezerwacja (id_hotelu, data_wymeldowania, status);
+
+
 CREATE TABLE IF NOT EXISTS rezerwacja_pokoje (
     nr_rezerwacji INTEGER NOT NULL REFERENCES rezerwacja(nr_rezerwacji) ON DELETE CASCADE,
     id_pokoju INTEGER NOT NULL,

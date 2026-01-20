@@ -31,6 +31,7 @@ public class AuthController {
         return ResponseEntity.ok(service.login(req));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/employees/{employeeId}")
     public ResponseEntity<Void> deleteEmployeeAccount(@PathVariable int employeeId) {
         service.deleteEmployeeAccount(employeeId);

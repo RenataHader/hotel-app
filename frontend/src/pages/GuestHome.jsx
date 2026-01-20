@@ -702,13 +702,18 @@ export default function GuestHome() {
                       <div className="reserv-top">
                         <div className="reserv-title">
                           <b>{meta.hotelLabel}</b>
-                          {meta.status ? <span className="pill">{String(meta.status)}</span> : null}
                         </div>
 
-                        <div className="reserv-price">
-                          {meta.price !== "" ? <b>{String(meta.price)} PLN</b> : <span className="muted">—</span>}
+                        <div className="reserv-right">
+                          {meta.status ? <span className="pill reserv-status">{String(meta.status)}</span> : null}
+
+                          <div className="reserv-price">
+                            {meta.price !== "" ? <b>{String(meta.price)} PLN</b> : <span className="muted">—</span>}
+                          </div>
                         </div>
                       </div>
+
+
 
                       <div className="reserv-meta">
                         <span>

@@ -239,7 +239,6 @@ export default function CheckoutPage() {
       const payload = buildReservationRequest(clientPrice);
       const created = await createReservation(payload);
 
-      //alert(`Rezerwacja utworzona! ID: ${created?.id ?? "?"}`);
       nav("/guest");
     } catch (e) {
       console.error(e);

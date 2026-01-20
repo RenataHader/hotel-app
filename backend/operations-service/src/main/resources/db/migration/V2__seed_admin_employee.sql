@@ -1,5 +1,11 @@
 BEGIN;
 
+-- =========================================================
+-- PRACOWNICY (kilku recepcjonistów, konserwatorów, sprzątaczy)
+-- Uwaga: używam "Sprzatacz" bez polskich znaków, bo frontend sprawdza substring "sprzat".
+-- =========================================================
+
+-- Hotel 1 (id_hotelu = 1)
 INSERT INTO pracownik (id_pracownika, imie, nazwisko, stanowisko, data_zatrudnienia, nr_telefonu, id_hotelu) VALUES
   (1, 'Admin', 'Root', 'Administrator', CURRENT_DATE, '000000000', 1),
   (2, 'Jan', 'Kowalski', 'Recepcjonista', CURRENT_DATE, '111222333', 1),
@@ -12,6 +18,7 @@ INSERT INTO pracownik (id_pracownika, imie, nazwisko, stanowisko, data_zatrudnie
   (9, 'Monika', 'Szymanska', 'Sprzatacz', CURRENT_DATE - 30,  '111222340', 1)
 ON CONFLICT (id_pracownika) DO NOTHING;
 
+-- Hotel 2 (id_hotelu = 2)
 INSERT INTO pracownik (id_pracownika, imie, nazwisko, stanowisko, data_zatrudnienia, nr_telefonu, id_hotelu) VALUES
   (10, 'Tomasz', 'Wojcik', 'Recepcjonista', CURRENT_DATE - 210, '222333444', 2),
   (11, 'Karolina', 'Kowalczyk', 'Recepcjonista', CURRENT_DATE - 90,  '222333445', 2),
@@ -23,6 +30,7 @@ INSERT INTO pracownik (id_pracownika, imie, nazwisko, stanowisko, data_zatrudnie
   (17, 'Barbara', 'Pawlak', 'Sprzatacz', CURRENT_DATE - 20,  '222333451', 2)
 ON CONFLICT (id_pracownika) DO NOTHING;
 
+-- Hotel 3 (id_hotelu = 3)
 INSERT INTO pracownik (id_pracownika, imie, nazwisko, stanowisko, data_zatrudnienia, nr_telefonu, id_hotelu) VALUES
   (18, 'Mateusz', 'Witkowski', 'Recepcjonista', CURRENT_DATE - 310, '333444555', 3),
   (19, 'Julia', 'Walczak', 'Recepcjonista', CURRENT_DATE - 110, '333444556', 3),
@@ -34,6 +42,7 @@ INSERT INTO pracownik (id_pracownika, imie, nazwisko, stanowisko, data_zatrudnie
   (25, 'Iwona', 'Krupa', 'Sprzatacz', CURRENT_DATE - 25,  '333444562', 3)
 ON CONFLICT (id_pracownika) DO NOTHING;
 
+-- Hotel 4 (id_hotelu = 4)
 INSERT INTO pracownik (id_pracownika, imie, nazwisko, stanowisko, data_zatrudnienia, nr_telefonu, id_hotelu) VALUES
   (26, 'Lukasz', 'Kubiak', 'Recepcjonista', CURRENT_DATE - 260, '444555666', 4),
   (27, 'Magdalena', 'Slawinska', 'Recepcjonista', CURRENT_DATE - 95,  '444555667', 4),
@@ -45,10 +54,17 @@ INSERT INTO pracownik (id_pracownika, imie, nazwisko, stanowisko, data_zatrudnie
   (33, 'Elzbieta', 'Jankowska', 'Sprzatacz', CURRENT_DATE - 15,  '444555673', 4)
 ON CONFLICT (id_pracownika) DO NOTHING;
 
+-- Ustaw sekwencję pracownik po ręcznych ID
 SELECT setval(pg_get_serial_sequence('pracownik', 'id_pracownika'),
               (SELECT COALESCE(MAX(id_pracownika), 1) FROM pracownik));
 
+-- =========================================================
+-- KONSERWACJE: 100 na hotel (razem 400)
+-- Statusy zgodne z frontendem: REPORTED / IN_PROGRESS / DONE
+-- id_pokoju: zakładam 50 pokoi/hotel i zakresy 1..200 jak w Twoim seedzie.
+-- =========================================================
 
+-- HOTEL 1: pokoje 1..50, konserwatorzy 7/8
 INSERT INTO konserwacja (id_konserwacji, data_zgloszenia, opis, status, czas_trwania, id_pokoju, id_pracownika)
 SELECT
   10000 + (0 * 100) + gs AS id_konserwacji,
@@ -81,6 +97,7 @@ SELECT
 FROM generate_series(1, 100) gs
 ON CONFLICT (id_konserwacji) DO NOTHING;
 
+-- HOTEL 2: pokoje 51..100, konserwatorzy 15/16
 INSERT INTO konserwacja (id_konserwacji, data_zgloszenia, opis, status, czas_trwania, id_pokoju, id_pracownika)
 SELECT
   10000 + (1 * 100) + gs AS id_konserwacji,
@@ -113,6 +130,7 @@ SELECT
 FROM generate_series(1, 100) gs
 ON CONFLICT (id_konserwacji) DO NOTHING;
 
+-- HOTEL 3: pokoje 101..150, konserwatorzy 23/24
 INSERT INTO konserwacja (id_konserwacji, data_zgloszenia, opis, status, czas_trwania, id_pokoju, id_pracownika)
 SELECT
   10000 + (2 * 100) + gs AS id_konserwacji,
@@ -145,6 +163,7 @@ SELECT
 FROM generate_series(1, 100) gs
 ON CONFLICT (id_konserwacji) DO NOTHING;
 
+-- HOTEL 4: pokoje 151..200, konserwatorzy 31/32
 INSERT INTO konserwacja (id_konserwacji, data_zgloszenia, opis, status, czas_trwania, id_pokoju, id_pracownika)
 SELECT
   10000 + (3 * 100) + gs AS id_konserwacji,
@@ -177,6 +196,7 @@ SELECT
 FROM generate_series(1, 100) gs
 ON CONFLICT (id_konserwacji) DO NOTHING;
 
+-- Ustaw sekwencję konserwacja po ręcznych ID
 SELECT setval(pg_get_serial_sequence('konserwacja', 'id_konserwacji'),
               (SELECT COALESCE(MAX(id_konserwacji), 1) FROM konserwacja));
 

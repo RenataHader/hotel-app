@@ -1,6 +1,7 @@
 package com.hotel.identity.account;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +20,7 @@ public class AccountController {
         return service.getByEmail(auth.getName());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/employee/{employeeId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEmployeeAccount(@PathVariable Integer employeeId) {

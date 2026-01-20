@@ -166,6 +166,118 @@ public class ReservationService {
                 .build();
     }
 
+    public List<ReservationResponse> getAllReservationsLight() {
+        return reservationRepo.findAll().stream()
+                .map(r -> ReservationResponse.builder()
+                        .id(r.getId())
+                        .guestFullName(r.getGuest() != null
+                                ? (r.getGuest().getFirstName() + " " + r.getGuest().getLastName())
+                                : null)
+                        .hotelId(r.getHotelId())
+                        .checkInDate(r.getCheckInDate())
+                        .checkOutDate(r.getCheckOutDate())
+                        .status(r.getStatus() != null ? r.getStatus().name() : null)
+                        .build())
+                .toList();
+    }
+
+
+    public Page<ReservationResponse> getAllReservationsLightPage(int page, int size) {
+        return reservationRepo.findAllWithGuest(PageRequest.of(page, size))
+                .map(r -> ReservationResponse.builder()
+                        .id(r.getId())
+                        .guestFullName(r.getGuest() != null
+                                ? (r.getGuest().getFirstName() + " " + r.getGuest().getLastName())
+                                : null)
+                        .hotelId(r.getHotelId())
+                        .checkInDate(r.getCheckInDate())
+                        .checkOutDate(r.getCheckOutDate())
+                        .status(r.getStatus() != null ? r.getStatus().name() : null)
+                        .build());
+    }
+
+    public List<ReservationResponse> getHotelCheckinsForDate(LocalDate date) {
+        JwtUser user = getJwtUser();
+        if (user.hotelId() == null) throw new IllegalArgumentException("Endpoint dla personelu");
+
+        List<Reservation> rs = reservationRepo.findAllByHotelIdAndCheckInDateAndStatusNot(
+                user.hotelId(), date, ReservationStatus.ANULOWANE
+        );
+
+        return mapToStaffRows(rs);
+    }
+
+    public List<ReservationResponse> getHotelCheckoutsForDate(LocalDate date) {
+        JwtUser user = getJwtUser();
+        if (user.hotelId() == null) throw new IllegalArgumentException("Endpoint dla personelu");
+
+        List<Reservation> rs = reservationRepo.findAllByHotelIdAndCheckOutDateAndStatusNot(
+                user.hotelId(), date, ReservationStatus.ANULOWANE
+        );
+
+        return mapToStaffRows(rs);
+    }
+
+    private List<ReservationResponse> mapToStaffRows(List<Reservation> rs) {
+        if (rs == null || rs.isEmpty()) return List.of();
+
+        LinkedHashSet<Integer> allRoomIds = new LinkedHashSet<>();
+        for (Reservation r : rs) {
+            if (r.getRoomIds() == null) continue;
+            for (Integer id : r.getRoomIds()) if (id != null) allRoomIds.add(id);
+        }
+
+        Map<Integer, CatalogClient.RoomSnapshot> roomCache = new HashMap<>();
+        for (Integer rid : allRoomIds) {
+            try {
+                CatalogClient.RoomSnapshot s = catalogClient.getRoom(rid);
+                if (s != null) roomCache.put(rid, s);
+            } catch (Exception ignored) {}
+        }
+
+        List<ReservationResponse> out = new ArrayList<>(rs.size());
+
+        for (Reservation r : rs) {
+            String guestFullName = (r.getGuest() == null)
+                    ? null
+                    : (r.getGuest().getFirstName() + " " + r.getGuest().getLastName());
+
+            List<Integer> ids = (r.getRoomIds() == null) ? List.of() : r.getRoomIds();
+            Integer primaryRoomId = ids.isEmpty() ? null : ids.get(0);
+
+            String primaryRoomNumber = null;
+            List<ReservedRoomResponse> roomsOut = new ArrayList<>();
+
+            for (Integer id : ids) {
+                if (id == null) continue;
+                CatalogClient.RoomSnapshot s = roomCache.get(id);
+
+                if (primaryRoomNumber == null && Objects.equals(id, primaryRoomId)) {
+                    primaryRoomNumber = (s != null ? s.roomNumber() : null);
+                }
+
+                roomsOut.add(ReservedRoomResponse.builder()
+                        .roomId(id)
+                        .roomNumber(s != null ? s.roomNumber() : null)
+                        .build());
+            }
+
+            out.add(ReservationResponse.builder()
+                    .id(r.getId())
+                    .guestFullName(guestFullName)
+                    .hotelId(r.getHotelId())
+                    .checkInDate(r.getCheckInDate())
+                    .checkOutDate(r.getCheckOutDate())
+                    .status(r.getStatus() == null ? null : r.getStatus().name())
+                    .roomId(primaryRoomId)
+                    .roomNumber(primaryRoomNumber)
+                    .rooms(roomsOut)
+                    .build());
+        }
+
+        return out;
+    }
+
     @Transactional
     public ReservationResponse createReservation(ReservationRequest request) {
         Guest guest = getAuthenticatedGuest();

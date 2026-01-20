@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/panelCommon.css";
 
-import { getHotelReservations } from "../api/booking";
+import { getHotelCheckins, getHotelCheckouts } from "../api/booking";
 import { getRooms } from "../api/catalog";
 import {
   checkInReservation,
@@ -23,6 +23,32 @@ const MAINT_STATUS = {
   IN_PROGRESS: "IN_PROGRESS",
   DONE: "DONE",
 };
+
+const STATUS_ORDER_CHECKIN = {
+  ZAREZEROWANE: 0,
+  ZAKWATEROWANE: 1,
+  WYKWATEROWANE: 2,
+};
+
+const STATUS_ORDER_CHECKOUT = {
+  ZAKWATEROWANE: 0,
+  WYKWATEROWANE: 1,
+  ZAREZEROWANE: 2,
+};
+
+function statusRank(status, map) {
+  const s = String(status || "").toUpperCase();
+  return map[s] ?? 99;
+}
+
+function guestSortKey(fullName) {
+  const s = String(fullName || "").trim();
+  if (!s) return "~~~|~~~";
+  const parts = s.split(/\s+/);
+  const last = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+  const first = parts.length > 1 ? parts.slice(0, -1).join(" ") : "";
+  return `${last.toLowerCase()}|${first.toLowerCase()}`;
+}
 
 function toIntOrNull(v) {
   const s = String(v ?? "").trim();
@@ -49,10 +75,9 @@ export default function StaffPanelPage() {
   const [view, setView] = useState(initialView);
 
 
-  const [reservations, setReservations] = useState([]);
   const [maintenance, setMaintenance] = useState([]);
   const [rooms, setRooms] = useState([]);
-  const [employees, setEmployeesState] = useState([]);
+  const [employees, setEmployees] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -63,6 +88,10 @@ export default function StaffPanelPage() {
   const menuRef = useRef(null);
 
   const today = useMemo(() => todayIso(), []);
+
+  const [checkinsRaw, setCheckinsRaw] = useState([]);
+  const [checkoutsRaw, setCheckoutsRaw] = useState([]);
+
 
   const canCheck = useMemo(() => canAccessTab(user, "checkinout"), [user]);
   const canReportMaintenance = useMemo(
@@ -101,29 +130,76 @@ export default function StaffPanelPage() {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  async function loadAll() {
-    setLoading(true);
+  async function safe(promise) {
+  try {
+    return await promise;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+  async function loadReservationsOnly(initial = false) {
+    if (initial) setLoading(true);
     setErr("");
     setOk("");
 
-    try {
-      const [r, m, rs, emps] = await Promise.all([
-        getHotelReservations().catch(() => []),
-        getMaintenance().catch(() => []),
-        getRooms().catch(() => []),
-        getEmployees().catch(() => []),
-      ]);
+    const date = todayIso();
 
-      setReservations(Array.isArray(r) ? r : []);
-      setMaintenance(Array.isArray(m) ? m : []);
-      setRooms(Array.isArray(rs) ? rs : []);
-      setEmployeesState(Array.isArray(emps) ? emps : []);
-    } catch (e) {
-      setErr(e?.response?.data?.message || "Błąd pobrania danych panelu.");
-    } finally {
-      setLoading(false);
+    const [ci, co] = await Promise.all([
+      safe(getHotelCheckins(date)),
+      safe(getHotelCheckouts(date)),
+    ]);
+
+    setCheckinsRaw(Array.isArray(ci) ? ci : []);
+    setCheckoutsRaw(Array.isArray(co) ? co : []);
+
+    if (initial) setLoading(false);
+  }
+
+
+  async function loadMaintenanceOnly() {
+    const m = await safe(getMaintenance());
+    setMaintenance(Array.isArray(m) ? m : []);
+  }
+
+  async function loadRoomsOnly() {
+    const rs = await safe(getRooms());
+    setRooms(Array.isArray(rs) ? rs : []);
+  }
+
+  async function loadEmployeesOnly() {
+    const emps = await safe(getEmployees());
+    setEmployees(Array.isArray(emps) ? emps : []);
+  }
+
+
+  async function ensureDataForView(nextView) {
+    if (nextView === "checkin" || nextView === "checkout") return;
+
+    if (nextView === "maintenance_report" || nextView === "maintenance_manage") {
+      await Promise.all([
+        rooms.length ? Promise.resolve() : loadRoomsOnly(),
+        employees.length ? Promise.resolve() : loadEmployeesOnly(),
+        maintenance.length ? Promise.resolve() : loadMaintenanceOnly(),
+      ]);
     }
   }
+
+  async function refreshCurrent() {
+    setErr("");
+    setOk("");
+
+    if (view === "checkin" || view === "checkout") {
+      await loadReservationsOnly(false);
+      return;
+    }
+
+    if (view === "maintenance_report" || view === "maintenance_manage") {
+      await Promise.all([loadRoomsOnly(), loadEmployeesOnly(), loadMaintenanceOnly()]);
+    }
+  }
+
 
   async function reloadMaintenanceOnly() {
     try {
@@ -137,8 +213,35 @@ export default function StaffPanelPage() {
   }
 
   useEffect(() => {
-    loadAll();
+    ensureDataForView(view);
+  }, [view]);
+
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      setLoading(true);
+      setErr("");
+      setOk("");
+
+      try {
+        if (initialView === "checkin" || initialView === "checkout") {
+          await loadReservationsOnly(false);
+        } else {
+          await Promise.all([loadRoomsOnly(), loadEmployeesOnly(), loadMaintenanceOnly()]);
+        }
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, []);
+
+
 
   useEffect(() => {
   const pos = (user?.position || "").toLowerCase();
@@ -204,23 +307,56 @@ export default function StaffPanelPage() {
   }, [maintenanceInMyHotel, maintStatusFilter, maintOnlyMine, user?.employeeId]);
 
   const checkIns = useMemo(() => {
-    return reservations.filter(
-      (r) => String(r.checkInDate) === today && r.status !== "ANULOWANE"
-    );
-  }, [reservations, today]);
+    const arr = [...(checkinsRaw || [])].filter((r) => r.status !== "ANULOWANE");
+
+    arr.sort((a, b) => {
+      const ra = statusRank(a.status, STATUS_ORDER_CHECKIN);
+      const rb = statusRank(b.status, STATUS_ORDER_CHECKIN);
+      if (ra !== rb) return ra - rb;
+
+      const ga = guestSortKey(a.guestFullName);
+      const gb = guestSortKey(b.guestFullName);
+      const c = ga.localeCompare(gb, "pl");
+      if (c !== 0) return c;
+
+      return (a.id || 0) - (b.id || 0);
+    });
+
+    return arr;
+  }, [checkinsRaw]);
+
 
   const checkOuts = useMemo(() => {
-    return reservations.filter(
-      (r) => String(r.checkOutDate) === today && r.status !== "ANULOWANE"
-    );
-  }, [reservations, today]);
+    const arr = [...(checkoutsRaw || [])].filter((r) => r.status !== "ANULOWANE");
 
-  const list = view === "checkin" ? checkIns : checkOuts;
+    arr.sort((a, b) => {
+      const ra = statusRank(a.status, STATUS_ORDER_CHECKOUT);
+      const rb = statusRank(b.status, STATUS_ORDER_CHECKOUT);
+      if (ra !== rb) return ra - rb;
+
+      const ga = guestSortKey(a.guestFullName);
+      const gb = guestSortKey(b.guestFullName);
+      const c = ga.localeCompare(gb, "pl");
+      if (c !== 0) return c;
+
+      return (a.id || 0) - (b.id || 0);
+    });
+
+    return arr;
+  }, [checkoutsRaw]);
+
+
+  const list = useMemo(() => {
+    if (view === "checkin") return checkIns;
+    if (view === "checkout") return checkOuts;
+    return [];
+  }, [view, checkIns, checkOuts]);
+
 
   async function onCheckIn(id) {
     if (!canCheck) {
       setErr(
-        "Brak uprawnień: check-in/check-out dostępne tylko dla stanowiska Recepcjonista."
+        "Brak uprawnień: zakwaterowanie/wykwaterowanie dostępne tylko dla stanowiska Recepcjonista."
       );
       return;
     }
@@ -229,9 +365,9 @@ export default function StaffPanelPage() {
     setOk("");
     try {
       await checkInReservation(id);
-      await loadAll();
+      await loadReservationsOnly(false);
     } catch (e) {
-      setErr(e?.response?.data?.message || "Nie udało się zrobić check-in.");
+      setErr(e?.response?.data?.message || "Nie udało się zrobić zakwaterować.");
     } finally {
       setBusyId(null);
     }
@@ -240,7 +376,7 @@ export default function StaffPanelPage() {
   async function onCheckOut(id) {
     if (!canCheck) {
       setErr(
-        "Brak uprawnień: check-in/check-out dostępne tylko dla stanowiska Recepcjonista."
+        "Brak uprawnień: zakwaterowanie/wykwaterowanie dostępne tylko dla stanowiska Recepcjonista."
       );
       return;
     }
@@ -249,9 +385,9 @@ export default function StaffPanelPage() {
     setOk("");
     try {
       await checkOutReservation(id);
-      await loadAll();
+      await loadReservationsOnly(false);
     } catch (e) {
-      setErr(e?.response?.data?.message || "Nie udało się zrobić check-out.");
+      setErr(e?.response?.data?.message || "Nie udało się zrobić wykwaterowania.");
     } finally {
       setBusyId(null);
     }
@@ -431,14 +567,6 @@ export default function StaffPanelPage() {
     }
   }
 
-  function viewLabel() {
-    if (view === "checkin") return "Zakwaterowanie";
-    if (view === "checkout") return "Wykwaterowanie";
-    if (view === "maintenance_report") return "Zgłoś usterkę";
-    if (view === "maintenance_manage") return "Konserwacje";
-    return view;
-  }
-
   if (loading) {
     return (
       <div className="panel-page">
@@ -467,7 +595,7 @@ export default function StaffPanelPage() {
             </div>
 
             <div className="panel-toolbar">
-              <button className="panel-btn" type="button" onClick={loadAll}>
+              <button className="panel-btn" type="button" onClick={refreshCurrent}>
                 Odśwież
               </button>
 

@@ -174,7 +174,7 @@
   margin-top: 8px;
   display: grid;
   gap: 6px;
-  font-size: 12px;
+  font-size: 14px;
   color: rgba(255, 255, 255, 0.82);
 }
 
@@ -461,4 +461,31 @@
   border: 1px solid rgba(255,255,255,0.14);
   background: rgba(0,0,0,0.22);
   color: rgba(255,255,255,0.92);
+}
+
+.reserv-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.reserv-title {
+  min-width: 0;            
+}
+
+.reserv-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;   
+  gap: 6px;
+  white-space: nowrap;     
+}
+
+.reserv-status {
+  align-self: flex-end;
+}
+
+.reserv-price {
+  text-align: right;
 }

@@ -20,9 +20,18 @@ public class ReservationController {
     private final ReservationRepository reservationRepo;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<ReservationResponse> getAll() {
-        return reservationService.getAllReservations();
+        return reservationService.getAllReservationsLight();
+    }
+
+    @GetMapping("/admin/light")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<ReservationResponse> getAllLight(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        return reservationService.getAllReservationsLightPage(page, size);
     }
 
     @GetMapping("/my")
@@ -45,6 +54,7 @@ public class ReservationController {
         return reservationRepo.findReservedRoomIds(from, to);
     }
 
+    @PreAuthorize("hasAnyRole('GUEST','EMPLOYEE')")
     @PatchMapping("/{id}/cancel")
     public void cancel(@PathVariable Integer id) {
         reservationService.cancelReservation(id);
@@ -91,6 +101,26 @@ public class ReservationController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from
     ) {
         return reservationRepo.existsFutureForRoom(roomId, from);
+    }
+
+    @GetMapping("/hotel/checkins")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public List<ReservationResponse> getHotelCheckins(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        LocalDate d = (date != null) ? date : LocalDate.now();
+        return reservationService.getHotelCheckinsForDate(d);
+    }
+
+    @GetMapping("/hotel/checkouts")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public List<ReservationResponse> getHotelCheckouts(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        LocalDate d = (date != null) ? date : LocalDate.now();
+        return reservationService.getHotelCheckoutsForDate(d);
     }
 
 }

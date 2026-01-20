@@ -92,7 +92,11 @@ services:
 
       APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
       APP_JWT_EXPIRATION_MS: "3600000"
-      APP_SECURITY_PERMIT_ALL_0: "/**"
+      APP_SECURITY_PERMIT_ALL_0: "/public/guests"
+      APP_SECURITY_PERMIT_ALL_1: "/api/reservations/quote"
+      APP_SECURITY_PERMIT_ALL_2: "/api/reservations/reserved-ids"
+      APP_SECURITY_PERMIT_ALL_3: "/api/reservations/rooms/*/has-future"
+      APP_SECURITY_PERMIT_ALL_4: "/error"
 
       APP_SERVICES_CATALOG_BASE_URL: "http://catalog-service:8082"
     depends_on:
@@ -122,7 +126,12 @@ services:
 
       APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
       APP_JWT_EXPIRATION_MS: "3600000"
-      APP_SECURITY_PERMIT_ALL_0: "/**"
+      APP_SECURITY_PERMIT_ALL_0: "/hotels"
+      APP_SECURITY_PERMIT_ALL_1: "/api/rooms/**"
+      APP_SECURITY_PERMIT_ALL_2: "/catering/**"
+      APP_SECURITY_PERMIT_ALL_3: "/services/**"
+      APP_SECURITY_PERMIT_ALL_4: "/health"
+      APP_SECURITY_PERMIT_ALL_5: "/error"
 
       APP_SERVICES_BOOKING_BASE_URL: "http://booking-service:8081"
     depends_on:
@@ -152,7 +161,9 @@ services:
 
       APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
       APP_JWT_EXPIRATION_MS: "3600000"
-      APP_SECURITY_PERMIT_ALL_0: "/**"
+      APP_SECURITY_PERMIT_ALL_0: "/auth/login"
+      APP_SECURITY_PERMIT_ALL_1: "/auth/register-guest"
+      APP_SECURITY_PERMIT_ALL_2: "/error"
 
       APP_OPERATIONS_URL: "http://operations-service:8084"
       APP_BOOKING_URL: "http://booking-service:8081"
@@ -183,7 +194,8 @@ services:
 
       APP_JWT_SECRET_BASE64: "Lqpzyu+lci2h7exyvytGnnnxErqFI7SDxtux2yPC1Gk="
       APP_JWT_EXPIRATION_MS: "3600000"
-      APP_SECURITY_PERMIT_ALL_0: "/**"
+      APP_SECURITY_PERMIT_ALL_0: "/employees/*"
+      APP_SECURITY_PERMIT_ALL_1: "/error"
 
       APP_SERVICES_BOOKING_BASE_URL: "http://booking-service:8081"
       APP_SERVICES_IDENTITY_BASE_URL: "http://identity-service:8083"

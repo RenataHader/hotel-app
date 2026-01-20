@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "../styles/panelCommon.css";
 
 import { getHotels, getRooms, getRoomTypes, createRoom, deactivateRoom } from "../api/catalog";
-import { getAllReservations } from "../api/booking";
+import { getAdminReservationsLight } from "../api/booking";
 import { createEmployee, getEmployees, getEmployeePositions, deleteEmployee } from "../api/operations";
 import { registerEmployee } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
@@ -52,7 +52,7 @@ export default function AdminPanelPage() {
   const nav = useNavigate();
   const { user, signOut } = useAuth();
 
-  const [view, setView] = useState("employees");
+  const [view, setView] = useState("reservations");
 
   const [hotels, setHotels] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -83,6 +83,13 @@ export default function AdminPanelPage() {
   const [empConfirmOpen, setEmpConfirmOpen] = useState(false);
   const [empConfirmBusy, setEmpConfirmBusy] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
+
+  const [resPage, setResPage] = useState(0);
+  const [resSize, setResSize] = useState(50);
+  const [resTotalPages, setResTotalPages] = useState(0);
+  const [resTotalElements, setResTotalElements] = useState(0);
+  const [resLoading, setResLoading] = useState(false);
+
 
   const [form, setForm] = useState({
     firstName: "",
@@ -170,50 +177,90 @@ export default function AdminPanelPage() {
     });
   }, [rooms, roomHotelFilter, roomTypeFilter]);
 
-  async function loadAll() {
-    setLoading(true);
-    setErr("");
+ 
+  async function safe(promise) {
     try {
-      const [h, e, r, pos, roomsRes, typesRes] = await Promise.all([
-        getHotels(),
-        getEmployees(),
-        getAllReservations(),
-        getEmployeePositions(),
-        getRooms(),
-        getRoomTypes(),
+      return await promise;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  }
+
+  async function loadReservationsFirst(page = resPage, size = resSize) {
+    setResLoading(true);
+    setErr("");
+
+    try {
+      const [h, pageObj] = await Promise.all([
+        safe(getHotels()),
+        safe(getAdminReservationsLight(page, size)),
       ]);
 
       setHotels(Array.isArray(h) ? h : []);
-      setEmployees(Array.isArray(e) ? e : []);
-      setReservations(Array.isArray(r) ? r : []);
 
-      setRooms(Array.isArray(roomsRes) ? roomsRes : []);
-      setRoomTypes(Array.isArray(typesRes) ? typesRes : []);
+      const content = Array.isArray(pageObj?.content) ? pageObj.content : [];
+      setReservations(content);
 
-      const raw = Array.isArray(pos) ? pos : [];
-      const list = raw.filter((p) => String(p).trim().toLowerCase() !== "administrator");
-      setPositions(list);
+      setResPage(pageObj?.number ?? page);
+      setResSize(pageObj?.size ?? size);
+      setResTotalPages(pageObj?.totalPages ?? 0);
+      setResTotalElements(pageObj?.totalElements ?? 0);
 
-      setForm((f) => {
-        if (list.length === 0) {
-          return { ...f, useCustomPosition: true, position: "" };
-        }
-
-        const current = f.position || "";
-        const exists = current && list.includes(current);
-        return { ...f, useCustomPosition: false, position: exists ? current : (list[0] || "") };
-      });
-    } catch (e) {
-      setErr(e?.response?.data?.message || "Błąd pobierania danych.");
+      if (!pageObj || !Array.isArray(pageObj.content)) {
+        setErr("Nie udało się pobrać rezerwacji (admin/light).");
+      }
     } finally {
+      setResLoading(false);
       setLoading(false);
     }
   }
 
+  async function loadEmployeesData() {
+    setErr("");
+    const [e, pos] = await Promise.all([
+      safe(getEmployees()),
+      safe(getEmployeePositions()),
+    ]);
+
+    setEmployees(Array.isArray(e) ? e : []);
+
+    const raw = Array.isArray(pos) ? pos : [];
+    const list = raw.filter((p) => String(p).trim().toLowerCase() !== "administrator");
+    setPositions(list);
+
+    setForm((f) => {
+      if (list.length === 0) return { ...f, useCustomPosition: true, position: "" };
+      const current = f.position || "";
+      const exists = current && list.includes(current);
+      return { ...f, useCustomPosition: false, position: exists ? current : (list[0] || "") };
+    });
+  }
+
+  async function loadRoomsData() {
+    setErr("");
+    const [roomsRes, typesRes] = await Promise.all([
+      safe(getRooms()),
+      safe(getRoomTypes()),
+    ]);
+
+    setRooms(Array.isArray(roomsRes) ? roomsRes : []);
+    setRoomTypes(Array.isArray(typesRes) ? typesRes : []);
+  }
+
 
   useEffect(() => {
-    loadAll();
+    loadReservationsFirst(0, resSize);
   }, []);
+
+  useEffect(() => {
+    if (view === "employees" && employees.length === 0) {
+      loadEmployeesData();
+    }
+    if (view === "rooms" && rooms.length === 0) {
+      loadRoomsData();
+    }
+  }, [view]); 
 
   const filteredReservations = useMemo(() => {
     if (!hotelFilter) return reservations;
@@ -400,7 +447,7 @@ export default function AdminPanelPage() {
       }));
 
       setModalOpen(false);
-      await loadAll();
+      await loadEmployeesData();
     } catch (e2) {
       console.error(e2);
       setErr(
@@ -476,7 +523,8 @@ export default function AdminPanelPage() {
       });
 
       setRoomModalOpen(false);
-      await loadAll();
+      await loadRoomsData();
+
     } catch (e2) {
       console.error(e2);
 
@@ -518,7 +566,15 @@ export default function AdminPanelPage() {
             </div>
 
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <button className="panel-btn" type="button" onClick={loadAll}>
+              <button
+                className="panel-btn"
+                type="button"
+                onClick={() => {
+                  if (view === "reservations") loadReservationsFirst();
+                  if (view === "employees") loadEmployeesData();
+                  if (view === "rooms") loadRoomsData();
+                }}
+              >
                 Odśwież
               </button>
 
@@ -766,6 +822,46 @@ export default function AdminPanelPage() {
                 </label>
               </div>
 
+              <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 12 }}>
+                <button
+                  className="panel-btn ghost"
+                  type="button"
+                  disabled={resLoading || resPage <= 0}
+                  onClick={() => loadReservationsFirst(resPage - 1, resSize)}
+                >
+                  ← Poprzednia
+                </button>
+
+                <div style={{ fontSize: 12, opacity: 0.85 }}>
+                  Strona {resPage + 1} / {Math.max(resTotalPages, 1)} (łącznie {resTotalElements})
+                </div>
+
+                <button
+                  className="panel-btn ghost"
+                  type="button"
+                  disabled={resLoading || resPage + 1 >= resTotalPages}
+                  onClick={() => loadReservationsFirst(resPage + 1, resSize)}
+                >
+                  Następna →
+                </button>
+
+                <select
+                  className="select-glass"
+                  value={resSize}
+                  disabled={resLoading}
+                  onChange={(e) => {
+                    const nextSize = Number(e.target.value);
+                    setResSize(nextSize);
+                    loadReservationsFirst(0, nextSize);
+                  }}
+                  style={{ width: 120 }}
+                >
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+
               {filteredReservations.length === 0 ? (
                 <div style={{ opacity: 0.85, marginTop: 10 }}>Brak rezerwacji.</div>
               ) : (
@@ -776,8 +872,8 @@ export default function AdminPanelPage() {
                         <th>ID</th>
                         <th>Hotel</th>
                         <th>Gość</th>
-                        <th>Check-in</th>
-                        <th>Check-out</th>
+                        <th>Zakwaterowanie</th>
+                        <th>Wykwaterowanie</th>
                         <th>Status</th>
                       </tr>
                     </thead>
@@ -1243,7 +1339,7 @@ export default function AdminPanelPage() {
                       await deactivateRoom(roomToDeactivate.id);
                       setOk("Pokój dezaktywowany.");
                       closeDeactivateConfirm();
-                      await loadAll();
+                      await loadRoomsData();
                     } catch (e) {
                       setErr(e?.response?.data?.message || "Nie udało się dezaktywować pokoju.");
                     } finally {
@@ -1310,7 +1406,7 @@ export default function AdminPanelPage() {
                       await deleteEmployee(employeeToDelete.id);
                       setOk("Pracownik usunięty.");
                       closeEmployeeDeleteConfirm();
-                      await loadAll();
+                      await loadEmployeesData();
                     } catch (e) {
                       setErr(e?.response?.data?.message || "Nie udało się usunąć pracownika.");
                     } finally {

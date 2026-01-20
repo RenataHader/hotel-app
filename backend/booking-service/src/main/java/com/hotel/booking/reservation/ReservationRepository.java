@@ -1,5 +1,6 @@
 package com.hotel.booking.reservation;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -52,7 +53,19 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
     boolean existsFutureForRoom(@Param("roomId") Integer roomId,
                                 @Param("from") LocalDate from);
 
+    @Query("""
+      select r from Reservation r
+      join fetch r.guest g
+    """)
+    Page<Reservation> findAllWithGuest(Pageable pageable);
 
     Page<Reservation> findAllByGuest_Id(Integer guestId, Pageable pageable);
     Page<Reservation> findAllByHotelId(Integer hotelId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"guest"})
+    List<Reservation> findAllByHotelIdAndCheckInDateAndStatusNot(Integer hotelId, LocalDate checkInDate, ReservationStatus status);
+
+    @EntityGraph(attributePaths = {"guest"})
+    List<Reservation> findAllByHotelIdAndCheckOutDateAndStatusNot(Integer hotelId, LocalDate checkOutDate, ReservationStatus status);
+
 }

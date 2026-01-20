@@ -47,3 +47,29 @@ export async function cancelReservation(id) {
     headers: { Accept: "application/json" },
   });
 }
+
+export async function getAdminReservationsLight(page = 0, size = 50) {
+  const { data } = await http.get("/booking/api/reservations/admin/light", {
+    params: { page, size },
+    headers: { Accept: "application/json" },
+  });
+  return data; 
+}
+
+export async function getHotelCheckins(date) {
+  const { data } = await http.get("/booking/api/reservations/hotel/checkins", {
+    params: { date }, 
+    headers: { Accept: "application/json" },
+  });
+  return Array.isArray(data) ? data : [];
+}
+
+export async function getHotelCheckouts(date) {
+  const { data } = await http.get("/booking/api/reservations/hotel/checkouts", {
+    params: { date },
+    headers: { Accept: "application/json" },
+  });
+  return Array.isArray(data) ? data : [];
+}
+
+

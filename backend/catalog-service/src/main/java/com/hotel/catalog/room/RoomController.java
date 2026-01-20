@@ -3,6 +3,7 @@ package com.hotel.catalog.room;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +32,7 @@ public class RoomController {
         return roomService.getAvailableRooms(hotelId, from, to);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public RoomResponse create(@RequestBody RoomRequest request) {
@@ -55,6 +57,7 @@ public class RoomController {
         return roomService.getRoomTypes(hotelId);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/inactive")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deactivateRoom(@PathVariable Integer id) {

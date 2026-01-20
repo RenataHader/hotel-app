@@ -3,6 +3,7 @@ package com.hotel.operations.booking;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -12,6 +13,7 @@ public class BookingStatusController {
 
     private final BookingStatusService bookingStatusService;
 
+    @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
     @PatchMapping("/{id}/checkin")
     @ResponseStatus(HttpStatus.OK)
     public void checkIn(@PathVariable Integer id,
@@ -19,6 +21,7 @@ public class BookingStatusController {
         bookingStatusService.checkIn(id, auth);
     }
 
+    @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
     @PatchMapping("/{id}/checkout")
     @ResponseStatus(HttpStatus.OK)
     public void checkOut(@PathVariable Integer id,
